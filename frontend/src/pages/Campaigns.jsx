@@ -1,10 +1,20 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, Filter, Clock, Users, ArrowRight, Heart } from "lucide-react";
 
 const CampaignCard = ({ campaign, index }) => {
   const percent = Math.min((campaign.raised / campaign.goal) * 100, 100);
+  const navigate = useNavigate();
+
+  const handleDonateClick = () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate(`/donate?campaign=${campaign.id}`);
+    } else {
+      navigate("/login");
+    }
+  };
 
   return (
     <motion.div
@@ -68,11 +78,12 @@ const CampaignCard = ({ campaign, index }) => {
         </div>
 
         {/* Action */}
-        <Link to={`/donate?campaign=${campaign.id}`} className="block">
-          <button className="w-full py-3 bg-gray-50 hover:bg-primary hover:text-white text-gray-900 font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group-hover/btn relative overflow-hidden">
-            Donate Now <ArrowRight size={18} />
-          </button>
-        </Link>
+        <button
+          onClick={handleDonateClick}
+          className="w-full py-3 bg-gray-50 hover:bg-primary hover:text-white text-gray-900 font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group-hover/btn relative overflow-hidden"
+        >
+          Donate Now <ArrowRight size={18} />
+        </button>
       </div>
     </motion.div>
   );

@@ -3,10 +3,12 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight, Loader, Heart } from "lucide-react";
+import toast from "react-hot-toast";
 import Input from "../components/ui/Input";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [role, setRole] = useState("donor"); // 'donor' | 'admin'
   const navigate = useNavigate();
   const {
     register,
@@ -18,12 +20,12 @@ const Login = () => {
     setIsLoading(true);
     // Simulate API call
     setTimeout(() => {
-      console.log("Login Data:", data);
+      console.log("Login Data:", { ...data, role });
 
       // Mock successful login response with JWT
       const mockResponse = {
         token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock_token_payload",
-        user: { name: "John Doe", email: data.email },
+        user: { name: "John Doe", email: data.email, role },
       };
 
       // Store JWT
@@ -34,13 +36,24 @@ const Login = () => {
       window.dispatchEvent(new Event("loginStateChange"));
 
       setIsLoading(false);
-      // Navigate to dashboard or home
-      navigate("/dashboard");
+      toast.success("Welcome back! Signed in successfully.");
+      // Navigate based on role
+      if (role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     }, 2000);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <motion.div
+      initial={{ opacity: 0, x: 100 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -100 }}
+      transition={{ duration: 0.7, ease: "easeInOut" }}
+      className="min-h-screen flex items-center justify-center p-4 bg-background"
+    >
       <div className="bg-white rounded-[2rem] shadow-2xl overflow-hidden w-full max-w-5xl min-h-[600px] flex flex-col md:flex-row border border-gray-100">
         {/* Form Side (Left on Login for variety) */}
         <div className="md:w-1/2 p-8 lg:p-16 relative flex flex-col justify-center">
@@ -61,8 +74,35 @@ const Login = () => {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              {/* Role Selection */}
+              <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+                <button
+                  type="button"
+                  onClick={() => setRole("donor")}
+                  className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                    role === "donor"
+                      ? "bg-white shadow-sm text-primary"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Donor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("admin")}
+                  className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                    role === "admin"
+                      ? "bg-white shadow-sm text-primary"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Admin
+                </button>
+              </div>
+
               <Input
                 label="Email Address"
+                placeholder="you@example.com"
                 type="email"
                 icon={Mail}
                 {...register("email", {
@@ -78,6 +118,7 @@ const Login = () => {
               <div>
                 <Input
                   label="Password"
+                  placeholder="Enter your password"
                   type="password"
                   icon={Lock}
                   {...register("password", {
@@ -118,7 +159,7 @@ const Login = () => {
                 to="/signup"
                 className="text-primary font-bold hover:underline"
               >
-                Create Account
+                Register
               </Link>
             </div>
           </div>
@@ -157,7 +198,7 @@ const Login = () => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

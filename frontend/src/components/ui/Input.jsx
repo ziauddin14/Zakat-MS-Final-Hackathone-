@@ -6,25 +6,39 @@ const Input = React.forwardRef(
   ({ label, type = "text", error, icon: Icon, ...props }, ref) => {
     const [isFocused, setIsFocused] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [hasValue, setHasValue] = useState(false);
 
     const handleFocus = () => setIsFocused(true);
-    const handleBlur = (e) => {
-      setIsFocused(false);
-      setHasValue(e.target.value.length > 0);
-    };
+    const handleBlur = () => setIsFocused(false);
 
     const isPassword = type === "password";
     const inputType = isPassword ? (showPassword ? "text" : "password") : type;
 
     return (
-      <div className="relative mb-6">
-        <div className="relative">
+      <div className="space-y-2 mb-4 w-full">
+        {label && (
+          <label
+            className={`block text-sm font-semibold ml-1 transition-colors duration-200 ${
+              error
+                ? "text-red-500"
+                : isFocused
+                ? "text-primary"
+                : "text-gray-600"
+            }`}
+          >
+            {label}
+          </label>
+        )}
+
+        <div className="relative group">
           {/* Icon */}
           {Icon && (
             <div
-              className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-200 ${
-                isFocused ? "text-primary" : "text-gray-400"
+              className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-200 pointer-events-none ${
+                error
+                  ? "text-red-400"
+                  : isFocused
+                  ? "text-primary"
+                  : "text-gray-400 group-hover:text-gray-500"
               }`}
             >
               <Icon size={20} />
@@ -36,56 +50,38 @@ const Input = React.forwardRef(
             ref={ref}
             type={inputType}
             className={`
-            w-full bg-white border-2 rounded-xl py-3.5 px-4 outline-none transition-all duration-200
-            ${Icon ? "pl-12" : "pl-4"}
-            ${
-              error
-                ? "border-red-300 focus:border-red-500 text-red-900 placeholder-red-300"
-                : "border-gray-100 focus:border-primary text-gray-900"
-            }
-            ${isFocused || hasValue ? "pt-6 pb-2.5" : "py-4"}
-          `}
+              w-full bg-gray-50/50 border-2 rounded-xl py-4 px-4 outline-none transition-all duration-300 font-medium
+              ${Icon ? "pl-12" : "pl-4"}
+              ${isPassword ? "pr-12" : "pr-4"}
+              ${
+                error
+                  ? "border-red-200 focus:border-red-500 bg-red-50/50 text-red-900 placeholder:text-red-300"
+                  : "border-gray-100 hover:border-gray-200 focus:border-primary focus:bg-white text-gray-900 placeholder:text-gray-400"
+              }
+              focus:shadow-[0_0_0_4px_rgba(var(--primary-rgb),0.1)]
+            `}
             onFocus={handleFocus}
             onBlur={(e) => {
-              handleBlur(e);
+              handleBlur();
               props.onBlur?.(e);
-            }}
-            onChange={(e) => {
-              setHasValue(e.target.value.length > 0);
-              props.onChange?.(e);
             }}
             {...props}
           />
-
-          {/* Floating Label */}
-          <motion.label
-            initial={false}
-            animate={{
-              y: isFocused || hasValue ? -8 : 0,
-              scale: isFocused || hasValue ? 0.75 : 1,
-              x: isFocused || hasValue ? (Icon ? 12 : 0) : Icon ? 36 : 8,
-            }}
-            className={`absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none transition-colors duration-200 origin-left
-            ${
-              error
-                ? "text-red-400"
-                : isFocused
-                ? "text-primary"
-                : "text-gray-400"
-            }
-          `}
-          >
-            {label}
-          </motion.label>
 
           {/* Password Toggle */}
           {isPassword && (
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors focus:outline-none p-1 rounded-full hover:bg-gray-100"
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              <motion.div
+                initial={false}
+                animate={{ rotate: showPassword ? 0 : 180 }}
+                transition={{ duration: 0.2 }}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </motion.div>
             </button>
           )}
         </div>
@@ -93,11 +89,11 @@ const Input = React.forwardRef(
         {/* Error Message */}
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-1 mt-1 text-xs text-red-500 font-medium ml-1"
+            className="flex items-center gap-1.5 text-xs text-red-500 font-medium ml-1"
           >
-            <AlertCircle size={12} />
+            <AlertCircle size={14} />
             <span>{error.message}</span>
           </motion.div>
         )}

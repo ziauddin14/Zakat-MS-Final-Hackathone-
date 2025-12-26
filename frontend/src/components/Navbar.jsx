@@ -73,9 +73,12 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-8">
           {[
             { name: "Home", path: "/" },
-            { name: "About Us", path: "#" },
-            { name: "Campaigns", path: "#" },
-            { name: "Zakat Calculator", path: "#" },
+            { name: "About Us", path: "/about" },
+            { name: "Campaigns", path: "/campaigns" },
+            {
+              name: "Zakat Calculator",
+              path: isLoggedIn ? "/donate" : "/login",
+            },
           ].map((item) => (
             <Link
               key={item.name}
@@ -97,15 +100,18 @@ const Navbar = () => {
               Dashboard
             </Link>
           ) : (
-            <Link
-              to="/login"
-              className="font-semibold text-gray-600 hover:text-primary transition-colors"
-            >
-              Log In
+            <Link to="/login">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-white text-primary border-2 border-primary px-6 py-2.5 rounded-full font-semibold shadow-lg shadow-primary/10 transition-all flex items-center gap-2"
+              >
+                Sign In
+              </motion.button>
             </Link>
           )}
 
-          <Link to="/donate">
+          <Link to={isLoggedIn ? "/donate" : "/login"}>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -135,9 +141,12 @@ const Navbar = () => {
         >
           {[
             { name: "Home", path: "/" },
-            { name: "About Us", path: "#" },
+            { name: "About Us", path: "/about" },
             { name: "Campaigns", path: "/campaigns" },
-            { name: "Zakat Calculator", path: "/donate" },
+            {
+              name: "Zakat Calculator",
+              path: isLoggedIn ? "/donate" : "/login",
+            },
           ].map((item) => (
             <Link
               key={item.name}
@@ -148,16 +157,19 @@ const Navbar = () => {
               {item.name}
             </Link>
           ))}
+
           <Link
             to="/login"
             className="text-lg font-medium text-gray-700 py-2 border-b border-gray-100 block"
             onClick={() => setMobileMenuOpen(false)}
           >
-            Log In
+            Sign In
           </Link>
-          <button className="bg-primary text-white w-full py-3 rounded-xl font-bold mt-2">
-            Donate Now
-          </button>
+          <Link to={isLoggedIn ? "/donate" : "/login"}>
+            <button className="bg-primary text-white w-full py-3 rounded-xl font-bold mt-2">
+              Donate Now
+            </button>
+          </Link>
         </motion.div>
       )}
     </motion.nav>

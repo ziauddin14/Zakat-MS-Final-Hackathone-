@@ -10,7 +10,10 @@ import {
   DollarSign,
   PieChart,
   ArrowUpRight,
+  LogOut,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const StatCard = ({ title, value, subtitle, icon: Icon, delay }) => (
   <motion.div
@@ -58,6 +61,16 @@ const StatusBadge = ({ status }) => {
 };
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("loginStateChange"));
+    toast.success("Logged out successfully");
+    navigate("/");
+  };
+
   // Mock Data
   const transactions = [
     {
@@ -117,13 +130,24 @@ const Dashboard = () => {
             </p>
           </motion.div>
 
-          <motion.button
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-primary text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all flex items-center gap-2"
-          >
-            <DollarSign size={20} /> New Donation
-          </motion.button>
+          <div className="flex gap-3">
+            <motion.button
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              onClick={handleLogout}
+              className="bg-white text-gray-700 border border-gray-200 px-6 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-all flex items-center gap-2"
+            >
+              <LogOut size={20} /> Logout
+            </motion.button>
+            <motion.button
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              onClick={() => navigate("/donate")}
+              className="bg-primary text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all flex items-center gap-2"
+            >
+              <DollarSign size={20} /> New Donation
+            </motion.button>
+          </div>
         </div>
 
         {/* Stats Grid */}

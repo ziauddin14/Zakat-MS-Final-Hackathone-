@@ -30,6 +30,9 @@ const Layout = ({ children }) => {
   );
 };
 
+import { AnimatePresence } from "framer-motion";
+import { Toaster } from "react-hot-toast";
+
 const Home = () => (
   <>
     <Hero />
@@ -37,19 +40,40 @@ const Home = () => (
   </>
 );
 
+const About = React.lazy(() => import("./pages/About"));
+
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<Home />} />
+        <Route
+          path="/about"
+          element={
+            <React.Suspense fallback={<div>Loading...</div>}>
+              <About />
+            </React.Suspense>
+          }
+        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/campaigns" element={<Campaigns />} />
+        <Route path="/donate" element={<Donate />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 function App() {
   return (
     <Router>
+      <Toaster position="top-center" reverseOrder={false} />
       <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/campaigns" element={<Campaigns />} />
-          <Route path="/donate" element={<Donate />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-        </Routes>
+        <AnimatedRoutes />
       </Layout>
     </Router>
   );

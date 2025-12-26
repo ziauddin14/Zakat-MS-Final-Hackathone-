@@ -17,8 +17,13 @@ import {
   Calendar,
   ArrowUpRight,
   Filter,
+  Trash2,
+  Menu,
+  X,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 import Input from "../components/ui/Input";
 
 // --- Sub-Components ---
@@ -188,22 +193,35 @@ const DonationsTable = () => {
   );
 };
 
-const CreateCampaign = ({ onCancel }) => {
-  const { register, handleSubmit } = useForm();
+const CampaignForm = ({ initialData, onSubmit, onCancel }) => {
+  const { register, handleSubmit, reset } = useForm({
+    defaultValues: initialData || {
+      title: "",
+      category: "Emergency",
+      goal: "",
+      endDate: "",
+      description: "",
+      status: "Active", // Default status
+    },
+  });
 
-  const onSubmit = (data) => {
-    console.log("New Campaign:", data);
-    onCancel();
-  };
+  // Effect to reset form if initialData changes (optional but good practice)
+  React.useEffect(() => {
+    if (initialData) {
+      reset(initialData);
+    }
+  }, [initialData, reset]);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100"
+      className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-8"
     >
       <div className="flex justify-between items-center mb-6">
-        <h3 className="font-bold text-xl">Create New Campaign</h3>
+        <h3 className="font-bold text-xl">
+          {initialData ? "Edit Campaign" : "Create New Campaign"}
+        </h3>
         <button
           onClick={onCancel}
           className="text-gray-400 hover:text-gray-600"
@@ -216,7 +234,7 @@ const CreateCampaign = ({ onCancel }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
             label="Campaign Title"
-            {...register("title")}
+            {...register("title", { required: true })}
             placeholder="e.g. Winter Relief Fund"
           />
           <div className="flex flex-col gap-1">
@@ -227,10 +245,10 @@ const CreateCampaign = ({ onCancel }) => {
               {...register("category")}
               className="w-full bg-white border-2 border-gray-100 rounded-xl py-4 px-4 outline-none focus:border-primary"
             >
-              <option>Emergency</option>
-              <option>Education</option>
-              <option>Water</option>
-              <option>Zakat</option>
+              <option value="Emergency">Emergency</option>
+              <option value="Education">Education</option>
+              <option value="Water">Water</option>
+              <option value="Zakat">Zakat</option>
             </select>
           </div>
         </div>
@@ -239,10 +257,24 @@ const CreateCampaign = ({ onCancel }) => {
           <Input
             label="Goal Amount ($)"
             type="number"
-            {...register("goal")}
+            {...register("goal", { required: true })}
             placeholder="5000"
           />
           <Input label="End Date" type="date" {...register("endDate")} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Status</label>
+            <select
+              {...register("status")}
+              className="w-full bg-white border-2 border-gray-100 rounded-xl py-4 px-4 outline-none focus:border-primary"
+            >
+              <option value="Active">Active</option>
+              <option value="Completed">Completed</option>
+              <option value="Draft">Draft</option>
+            </select>
+          </div>
         </div>
 
         <div>
@@ -269,7 +301,7 @@ const CreateCampaign = ({ onCancel }) => {
             type="submit"
             className="px-6 py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:bg-primary-dark transition-colors"
           >
-            Launch Campaign
+            {initialData ? "Update Campaign" : "Launch Campaign"}
           </button>
         </div>
       </form>
@@ -282,6 +314,144 @@ const CreateCampaign = ({ onCancel }) => {
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  // Mock Campaign Data State
+  const [campaigns, setCampaigns] = useState([
+    {
+      id: 1,
+      title: "Winter Relief 2024",
+      description: "Emergency blankets and food...",
+      category: "Emergency",
+      goal: 20000,
+      raised: 12500,
+      endDate: "2024-12-31",
+      status: "Active",
+      image:
+        "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=500&auto=format&fit=crop&q=60",
+    },
+    {
+      id: 2,
+      title: "Clean Water for Mali",
+      description: "Drilling deep wells in rural areas.",
+      category: "Water",
+      goal: 15000,
+      raised: 5000,
+      endDate: "2024-11-20",
+      status: "Active",
+      image:
+        "https://images.unsplash.com/photo-1579706497230-044033284701?w=500&auto=format&fit=crop&q=60",
+    },
+    {
+      id: 3,
+      title: "Orphan Sponsorship",
+      description: "Providing education and care.",
+      category: "Education",
+      goal: 50000,
+      raised: 45000,
+      endDate: "2024-10-15",
+      status: "Completed",
+      image:
+        "https://images.unsplash.com/photo-1490126786801-7fa0939d73d6?w=500&auto=format&fit=crop&q=60",
+    },
+  ]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("loginStateChange"));
+    toast.success("Logged out successfully");
+    navigate("/");
+  };
+
+  // CRUD Handlers
+  const handleSaveCampaign = (data) => {
+    if (editingCampaign) {
+      // Update
+      setCampaigns(
+        campaigns.map((c) =>
+          c.id === editingCampaign.id
+            ? { ...c, ...data, raised: c.raised, image: c.image }
+            : c
+        )
+      );
+      toast.success("Campaign updated successfully!");
+      setEditingCampaign(null);
+    } else {
+      // Create
+      const newCampaign = {
+        id: Date.now(),
+        ...data,
+        raised: 0,
+        image:
+          "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=500&auto=format&fit=crop&q=60", // Placeholder
+      };
+      setCampaigns([newCampaign, ...campaigns]);
+      toast.success("New campaign launched successfully!");
+    }
+    setIsCreatingCampaign(false);
+  };
+
+  const handleDeleteCampaign = (id) => {
+    toast.custom((t) => (
+      <div
+        className={`${
+          t.visible ? "animate-enter" : "animate-leave"
+        } max-w-md w-full bg-white shadow-lg rounded-xl pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
+      >
+        <div className="flex-1 w-0 p-4">
+          <div className="flex items-start">
+            <div className="flex-shrink-0 pt-0.5">
+              <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+                <Trash2 size={20} className="text-red-600" />
+              </div>
+            </div>
+            <div className="ml-3 flex-1">
+              <p className="text-sm font-medium text-gray-900">
+                Delete Campaign?
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                Are you sure you want to delete this campaign? This action
+                cannot be undone.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex border-l border-gray-200">
+          <button
+            onClick={() => {
+              setCampaigns(campaigns.filter((c) => c.id !== id));
+              toast.dismiss(t.id);
+              toast.success("Campaign deleted successfully");
+            }}
+            className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-red-600 hover:text-red-500 focus:outline-none"
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="w-full border border-transparent rounded-none p-4 flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none border-l border-gray-200"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ));
+  };
+
+  const handleEditClick = (campaign) => {
+    setEditingCampaign(campaign);
+    setIsCreatingCampaign(true);
+  };
+
+  // Filtration
+  const filteredCampaigns =
+    filterStatus === "All"
+      ? campaigns
+      : campaigns.filter((c) => c.status === filterStatus);
 
   const tabs = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -292,37 +462,65 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex font-sans">
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        ></div>
+      )}
+
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-72 bg-white border-r border-gray-100 hidden lg:flex flex-col z-10">
-        <div className="p-8">
-          <div className="flex items-center gap-2 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-dark to-primary mb-10">
-            ZakatFlow{" "}
-            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded ml-1 h-fit self-start mt-1">
-              Admin
-            </span>
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 w-72 bg-white border-r border-gray-100 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:flex flex-col ${
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="p-8 h-full flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-2 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-dark to-primary">
+                ZakatFlow
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded ml-1 h-fit self-start mt-1">
+                  Admin
+                </span>
+              </div>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="lg:hidden text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <nav className="space-y-2">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
+                    activeTab === tab.id
+                      ? "bg-primary text-white shadow-lg shadow-primary/20"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900 gray-icon"
+                  }`}
+                >
+                  <tab.icon size={20} /> {tab.label}
+                </button>
+              ))}
+            </nav>
           </div>
 
-          <nav className="space-y-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === tab.id
-                    ? "bg-primary text-white shadow-lg shadow-primary/20"
-                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-900 gray-icon"
-                }`}
-              >
-                <tab.icon size={20} /> {tab.label}
-              </button>
-            ))}
-          </nav>
-
-          <div className="mt-10 pt-10 border-t border-gray-100 space-y-2">
+          <div className="pt-10 border-t border-gray-100 space-y-2">
             <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900">
               <Settings size={20} /> Settings
             </button>
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-500 hover:bg-red-50">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-500 hover:bg-red-50 relative start-0"
+            >
               <LogOut size={20} /> Logout
             </button>
           </div>
@@ -330,15 +528,23 @@ const AdminDashboard = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-72 p-8">
+      <main className="flex-1 lg:ml-0 p-4 md:p-8 w-full">
         <header className="flex justify-between items-center mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 capitalize">
-              {activeTab}
-            </h2>
-            <p className="text-gray-500 text-sm">
-              Overview of system performance.
-            </p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            >
+              <Menu size={24} />
+            </button>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 capitalize">
+                {activeTab}
+              </h2>
+              <p className="text-gray-500 text-sm hidden md:block">
+                Overview of system performance.
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="bg-white p-2 rounded-full border border-gray-100 shadow-sm">
@@ -377,7 +583,7 @@ const AdminDashboard = () => {
                 />
                 <StatCard
                   title="Active Campaigns"
-                  value="8"
+                  value={campaigns.filter((c) => c.status === "Active").length}
                   change={-2}
                   icon={Megaphone}
                   color="bg-purple-100 text-purple-600"
@@ -400,26 +606,35 @@ const AdminDashboard = () => {
                     Campaign Performance
                   </h3>
                   <div className="space-y-6">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i}>
+                    {campaigns.slice(0, 3).map((campaign) => (
+                      <div key={campaign.id}>
                         <div className="flex justify-between text-sm mb-2">
-                          <span className="font-medium">
-                            Emergency Gaza Relief
+                          <span className="font-medium line-clamp-1 w-2/3">
+                            {campaign.title}
                           </span>
                           <span className="font-bold text-gray-900">
-                            $45k / $50k
+                            ${campaign.raised / 1000}k / ${campaign.goal / 1000}
+                            k
                           </span>
                         </div>
                         <div className="w-full bg-gray-100 rounded-full h-2">
                           <div
                             className="bg-primary h-2 rounded-full"
-                            style={{ width: "90%" }}
+                            style={{
+                              width: `${Math.min(
+                                (campaign.raised / campaign.goal) * 100,
+                                100
+                              )}%`,
+                            }}
                           ></div>
                         </div>
                       </div>
                     ))}
                   </div>
-                  <button className="w-full mt-6 py-2.5 text-sm font-semibold text-primary bg-primary/5 rounded-lg hover:bg-primary/10 transition-colors">
+                  <button
+                    onClick={() => setActiveTab("campaigns")}
+                    className="w-full mt-6 py-2.5 text-sm font-semibold text-primary bg-primary/5 rounded-lg hover:bg-primary/10 transition-colors"
+                  >
                     View All Reports
                   </button>
                 </div>
@@ -445,70 +660,128 @@ const AdminDashboard = () => {
             >
               {!isCreatingCampaign ? (
                 <div>
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="flex gap-4">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div className="flex flex-wrap gap-2">
                       {["All", "Active", "Completed", "Draft"].map((status) => (
                         <button
                           key={status}
-                          className="px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                          onClick={() => setFilterStatus(status)}
+                          className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium border transition-colors ${
+                            filterStatus === status
+                              ? "bg-primary text-white border-primary"
+                              : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                          }`}
                         >
                           {status}
                         </button>
                       ))}
                     </div>
                     <button
-                      onClick={() => setIsCreatingCampaign(true)}
-                      className="px-4 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary-dark transition-colors flex items-center gap-2"
+                      onClick={() => {
+                        setEditingCampaign(null);
+                        setIsCreatingCampaign(true);
+                      }}
+                      className="w-full md:w-auto px-4 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 text-sm"
                     >
                       <Plus size={18} /> Create Campaign
                     </button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <div
-                        key={i}
-                        className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
-                      >
-                        <div className="h-40 bg-gray-200 relative">
-                          <img
-                            src={`https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y2hhcml0eXxlbnwwfHwwfHx8MA%3D%3D`}
-                            className="w-full h-full object-cover"
-                          />
-                          <span className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-green-600">
-                            Active
-                          </span>
-                        </div>
-                        <div className="p-5">
-                          <h4 className="font-bold text-lg mb-1">
-                            Winter Relief 2024
-                          </h4>
-                          <p className="text-gray-500 text-sm mb-4">
-                            Emergency blankets and food...
-                          </p>
-                          <div className="w-full bg-gray-100 rounded-full h-1.5 mb-4">
-                            <div
-                              className="bg-primary h-1.5 rounded-full"
-                              style={{ width: "65%" }}
-                            ></div>
-                          </div>
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="font-bold">
-                              $12,500{" "}
-                              <span className="text-gray-400 font-normal">
-                                raised
-                              </span>
+
+                  {filteredCampaigns.length === 0 ? (
+                    <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 mt-4">
+                      <Megaphone
+                        size={40}
+                        className="mx-auto text-gray-300 mb-4"
+                      />
+                      <h3 className="text-lg font-bold text-gray-900">
+                        No campaigns found
+                      </h3>
+                      <p className="text-gray-500">
+                        Try adjusting your filters or create a new one.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredCampaigns.map((campaign) => (
+                        <div
+                          key={campaign.id}
+                          className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full"
+                        >
+                          <div className="h-40 bg-gray-200 relative">
+                            <img
+                              src={campaign.image}
+                              alt={campaign.title}
+                              className="w-full h-full object-cover"
+                            />
+                            <span
+                              className={`absolute top-3 right-3 backdrop-blur px-2 py-1 rounded text-xs font-bold ${
+                                campaign.status === "Active"
+                                  ? "bg-white/90 text-green-600"
+                                  : "bg-gray-800/80 text-white"
+                              }`}
+                            >
+                              {campaign.status}
                             </span>
-                            <button className="text-primary hover:underline">
-                              Edit
-                            </button>
+                          </div>
+                          <div className="p-5 flex flex-col flex-grow">
+                            <h4 className="font-bold text-lg mb-1 line-clamp-1">
+                              {campaign.title}
+                            </h4>
+                            <p className="text-gray-500 text-sm mb-4 line-clamp-2 flex-grow">
+                              {campaign.description}
+                            </p>
+                            <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
+                              <div
+                                className="bg-primary h-1.5 rounded-full"
+                                style={{
+                                  width: `${Math.min(
+                                    (campaign.raised / campaign.goal) * 100,
+                                    100
+                                  )}%`,
+                                }}
+                              ></div>
+                            </div>
+                            <div className="flex justify-between items-center text-sm mb-4">
+                              <span className="font-bold">
+                                ${campaign.raised.toLocaleString()}{" "}
+                                <span className="text-gray-400 font-normal">
+                                  of ${campaign.goal.toLocaleString()}
+                                </span>
+                              </span>
+                            </div>
+
+                            <div className="flex gap-2 mt-auto pt-4 border-t border-gray-50">
+                              <button
+                                onClick={() => handleEditClick(campaign)}
+                                className="flex-1 py-2 text-sm font-semibold text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors"
+                              >
+                                Edit Details
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleDeleteCampaign(campaign.id)
+                                }
+                                className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                                title="Delete Campaign"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
-                <CreateCampaign onCancel={() => setIsCreatingCampaign(false)} />
+                <CampaignForm
+                  initialData={editingCampaign}
+                  onSubmit={handleSaveCampaign}
+                  onCancel={() => {
+                    setIsCreatingCampaign(false);
+                    setEditingCampaign(null);
+                  }}
+                />
               )}
             </motion.div>
           )}

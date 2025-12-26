@@ -3,10 +3,12 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { User, Mail, Phone, Lock, ArrowRight, Loader } from "lucide-react";
+import toast from "react-hot-toast";
 import Input from "../components/ui/Input";
 
 const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [role, setRole] = useState("donor"); // 'donor' | 'admin'
   const navigate = useNavigate();
   const {
     register,
@@ -18,12 +20,12 @@ const Signup = () => {
     setIsLoading(true);
     // Simulate API call
     setTimeout(() => {
-      console.log("Signup Data:", data);
+      console.log("Signup Data:", { ...data, role });
 
       // Mock successful signup response with JWT
       const mockResponse = {
         token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock_token_payload",
-        user: { name: data.name, email: data.email },
+        user: { name: data.name, email: data.email, role },
       };
 
       // Store JWT
@@ -34,16 +36,27 @@ const Signup = () => {
       window.dispatchEvent(new Event("loginStateChange"));
 
       setIsLoading(false);
-      // Navigate to dashboard or home
-      navigate("/dashboard");
+      toast.success("Account created successfully! Welcome aboard.");
+      // Navigate based on role
+      if (role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     }, 2000);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <motion.div
+      initial={{ opacity: 0, x: 100 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -100 }}
+      transition={{ duration: 0.7, ease: "easeInOut" }}
+      className="min-h-screen flex items-center justify-center p-4 bg-background"
+    >
       <div className="bg-white rounded-[2rem] shadow-2xl overflow-hidden w-full max-w-6xl min-h-[700px] flex flex-col lg:flex-row border border-gray-100">
         {/* Visual Side (Left on Desktop) */}
-        <div className="lg:w-1/2 bg-primary relative overflow-hidden p-12 text-white flex flex-col justify-between">
+        <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden p-12 text-white flex-col justify-between">
           {/* Background Patterns */}
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')] opacity-10"></div>
           <div className="absolute top-0 right-0 w-64 h-64 bg-accent rounded-full blur-[100px] opacity-40 translate-x-1/2 -translate-y-1/2"></div>
@@ -110,7 +123,7 @@ const Signup = () => {
           <div className="max-w-md mx-auto">
             <div className="mb-10">
               <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                Create Account
+                Register
               </h3>
               <p className="text-gray-500">
                 Sign up to start your journey of giving.
@@ -118,8 +131,35 @@ const Signup = () => {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
+              {/* Role Selection */}
+              <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+                <button
+                  type="button"
+                  onClick={() => setRole("donor")}
+                  className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                    role === "donor"
+                      ? "bg-white shadow-sm text-primary"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Donor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("admin")}
+                  className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                    role === "admin"
+                      ? "bg-white shadow-sm text-primary"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Admin
+                </button>
+              </div>
+
               <Input
                 label="Full Name"
+                placeholder="John Doe"
                 icon={User}
                 {...register("name", { required: "Full name is required" })}
                 error={errors.name}
@@ -127,6 +167,7 @@ const Signup = () => {
 
               <Input
                 label="Email Address"
+                placeholder="you@example.com"
                 type="email"
                 icon={Mail}
                 {...register("email", {
@@ -141,6 +182,7 @@ const Signup = () => {
 
               <Input
                 label="Phone Number"
+                placeholder="+1 234 567 890"
                 type="tel"
                 icon={Phone}
                 {...register("phone", {
@@ -152,6 +194,7 @@ const Signup = () => {
 
               <Input
                 label="Password"
+                placeholder="Create a strong password"
                 type="password"
                 icon={Lock}
                 {...register("password", {
@@ -175,7 +218,7 @@ const Signup = () => {
                   <Loader className="animate-spin" size={24} />
                 ) : (
                   <>
-                    Create Account <ArrowRight size={20} />
+                    Register <ArrowRight size={20} />
                   </>
                 )}
               </motion.button>
@@ -187,13 +230,13 @@ const Signup = () => {
                 to="/login"
                 className="text-primary font-bold hover:underline"
               >
-                Log in
+                Sign In
               </Link>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
