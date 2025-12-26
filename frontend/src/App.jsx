@@ -13,17 +13,19 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Campaigns from "./pages/Campaigns";
 import Donate from "./pages/Donate";
+import AdminDashboard from "./pages/AdminDashboard";
 
 // Layout component to conditionally render Navbar and Footer
 const Layout = ({ children }) => {
   const location = useLocation();
   const isAuthPage = ["/login", "/signup"].includes(location.pathname);
+  const isAdminPage = location.pathname.startsWith("/admin");
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
-      {!isAuthPage && <Navbar />}
+      {!isAuthPage && !isAdminPage && <Navbar />}
       <main className="flex-grow">{children}</main>
-      {!isAuthPage && <Footer />}
+      {!isAuthPage && !isAdminPage && <Footer />}
     </div>
   );
 };
@@ -46,6 +48,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/campaigns" element={<Campaigns />} />
           <Route path="/donate" element={<Donate />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
       </Layout>
     </Router>
