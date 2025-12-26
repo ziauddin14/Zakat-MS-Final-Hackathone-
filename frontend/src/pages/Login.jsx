@@ -30,9 +30,12 @@ const Login = () => {
       localStorage.setItem("token", mockResponse.token);
       localStorage.setItem("user", JSON.stringify(mockResponse.user));
 
+      // Notify Navbar
+      window.dispatchEvent(new Event("loginStateChange"));
+
       setIsLoading(false);
       // Navigate to dashboard or home
-      navigate("/");
+      navigate("/dashboard");
     }, 2000);
   };
 

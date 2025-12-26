@@ -10,6 +10,9 @@ import Hero from "./components/Hero";
 import Footer from "./components/Footer";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Dashboard from "./pages/Dashboard";
+import Campaigns from "./pages/Campaigns";
+import Donate from "./pages/Donate";
 
 // Layout component to conditionally render Navbar and Footer
 const Layout = ({ children }) => {
@@ -40,6 +43,9 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/campaigns" element={<Campaigns />} />
+          <Route path="/donate" element={<Donate />} />
         </Routes>
       </Layout>
     </Router>

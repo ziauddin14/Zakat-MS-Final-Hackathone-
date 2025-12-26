@@ -6,7 +6,27 @@ import { Menu, X, Heart } from "lucide-react";
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { scrollY } = useScroll();
+
+  useEffect(() => {
+    // Check for token to update login state
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem("token");
+      setIsLoggedIn(!!token);
+    };
+
+    checkLoginStatus();
+    window.addEventListener("storage", checkLoginStatus); // Listen for changes across tabs
+
+    // Also a custom event listener if we want to trigger it manually within same tab
+    window.addEventListener("loginStateChange", checkLoginStatus);
+
+    return () => {
+      window.removeEventListener("storage", checkLoginStatus);
+      window.removeEventListener("loginStateChange", checkLoginStatus);
+    };
+  }, []);
 
   // Background opacity based on scroll
   const bgOpacity = useTransform(scrollY, [0, 50], [0, 0.95]);
@@ -69,20 +89,32 @@ const Navbar = () => {
 
         {/* CTA Button */}
         <div className="hidden md:flex items-center gap-4">
-          <Link
-            to="/login"
-            className="font-semibold text-gray-600 hover:text-primary transition-colors"
-          >
-            Log In
+          {isLoggedIn ? (
+            <Link
+              to="/dashboard"
+              className="font-semibold text-gray-600 hover:text-primary transition-colors"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="font-semibold text-gray-600 hover:text-primary transition-colors"
+            >
+              Log In
+            </Link>
+          )}
+
+          <Link to="/donate">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-full font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2"
+            >
+              <span>Donate Now</span>
+              <Heart size={16} fill="currentColor" />
+            </motion.button>
           </Link>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-full font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2"
-          >
-            <span>Donate Now</span>
-            <Heart size={16} fill="currentColor" />
-          </motion.button>
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -104,8 +136,8 @@ const Navbar = () => {
           {[
             { name: "Home", path: "/" },
             { name: "About Us", path: "#" },
-            { name: "Campaigns", path: "#" },
-            { name: "Zakat Calculator", path: "#" },
+            { name: "Campaigns", path: "/campaigns" },
+            { name: "Zakat Calculator", path: "/donate" },
           ].map((item) => (
             <Link
               key={item.name}
