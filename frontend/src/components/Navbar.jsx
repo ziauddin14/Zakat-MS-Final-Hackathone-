@@ -13,7 +13,8 @@ const Navbar = () => {
     // Check for token to update login state
     const checkLoginStatus = () => {
       const token = localStorage.getItem("token");
-      setIsLoggedIn(!!token);
+      const adminToken = localStorage.getItem("adminToken");
+      setIsLoggedIn(!!token || !!adminToken);
     };
 
     checkLoginStatus();
@@ -94,7 +95,7 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-4">
           {isLoggedIn ? (
             <Link
-              to="/dashboard"
+              to={localStorage.getItem("adminToken") ? "/admin" : "/dashboard"}
               className="font-semibold text-gray-600 hover:text-primary transition-colors"
             >
               Dashboard

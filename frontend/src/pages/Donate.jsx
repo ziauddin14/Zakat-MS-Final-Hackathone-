@@ -8,10 +8,27 @@ import {
   CheckCircle,
   Heart,
   ArrowRight,
+  Loader,
 } from "lucide-react";
 import Input from "../components/ui/Input";
+import { createDonation } from "../api/api";
+import toast from "react-hot-toast";
+import { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const Donate = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const campaignId = searchParams.get("campaign");
+  useEffect(() => {
+    const token =
+      localStorage.getItem("token") || localStorage.getItem("adminToken");
+    if (!token) {
+      toast.error("Please login to make a donation.");
+      navigate("/login");
+    }
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -22,24 +39,34 @@ const Donate = () => {
     defaultValues: {
       amount: 100,
       type: "Zakat",
-      category: "General",
       method: "card",
     },
   });
 
+  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const selectedAmount = watch("amount");
   const selectedType = watch("type");
   const selectedMethod = watch("method");
 
-  const onSubmit = (data) => {
-    console.log("Donation Data:", data);
-    // Simulate API
-    setTimeout(() => setIsSuccess(true), 1500);
+  const onSubmit = async (data) => {
+    setIsLoading(true);
+    try {
+      await createDonation({ ...data, campaignId });
+      setIsSuccess(true);
+      toast.success("Donation successful! JazakAllah Khair.");
+    } catch (error) {
+      console.error("Donation Error:", error);
+      toast.error(
+        error.response?.data?.message || "Donation failed. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const presetAmounts = [50, 100, 250, 500, 1000];
-  const donationTypes = ["Zakat", "Sadaqah", "Fitra", "General"];
+  const donationTypes = ["Zakat", "Sadqah", "Fitra", "General"];
 
   if (isSuccess) {
     return (
@@ -271,9 +298,16 @@ const Donate = () => {
 
               <button
                 onClick={handleSubmit(onSubmit)}
-                className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all flex items-center justify-center gap-2"
+                disabled={isLoading}
+                className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Complete Donation <ArrowRight size={20} />
+                {isLoading ? (
+                  <Loader className="animate-spin" size={20} />
+                ) : (
+                  <>
+                    Complete Donation <ArrowRight size={20} />
+                  </>
+                )}
               </button>
 
               <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">

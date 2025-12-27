@@ -25,6 +25,13 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import Input from "../components/ui/Input";
+import {
+  getAdminStats,
+  getAllDonations,
+  getAllUsers,
+  updateDonationStatus,
+} from "../api/api";
+import { useEffect } from "react";
 
 // --- Sub-Components ---
 
@@ -47,55 +54,35 @@ const StatCard = ({ title, value, change, icon: Icon, color }) => (
   </div>
 );
 
-const DonationsTable = () => {
-  const [donations, setDonations] = useState([
-    {
-      id: "#D-1024",
-      donor: "Ahmed Khan",
-      amount: "$500",
-      type: "Zakat",
-      date: "2024-03-15",
-      status: "Verified",
-    },
-    {
-      id: "#D-1023",
-      donor: "Sarah Smith",
-      amount: "$100",
-      type: "Sadaqah",
-      date: "2024-03-14",
-      status: "Pending",
-    },
-    {
-      id: "#D-1022",
-      donor: "Mohammed Ali",
-      amount: "$1,200",
-      type: "Gen. Fund",
-      date: "2024-03-14",
-      status: "Verified",
-    },
-    {
-      id: "#D-1021",
-      donor: "Fatima Noor",
-      amount: "$50",
-      type: "Fitra",
-      date: "2024-03-13",
-      status: "Rejected",
-    },
-    {
-      id: "#D-1020",
-      donor: "Anonymous",
-      amount: "$250",
-      type: "Zakat",
-      date: "2024-03-12",
-      status: "Pending",
-    },
-  ]);
+const DonationsTable = ({ donations, onUpdateStatus }) => {
+  const [localDonations, setLocalDonations] = useState(donations);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const handleStatusChange = (id, newStatus) => {
-    setDonations(
-      donations.map((d) => (d.id === id ? { ...d, status: newStatus } : d))
-    );
+  useEffect(() => {
+    setLocalDonations(donations);
+  }, [donations]);
+
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await updateDonationStatus(id, newStatus);
+      setLocalDonations(
+        localDonations.map((d) =>
+          d._id === id ? { ...d, status: newStatus } : d
+        )
+      );
+      toast.success(`Donation ${newStatus.toLowerCase()} successfully`);
+      if (onUpdateStatus) onUpdateStatus();
+    } catch (error) {
+      console.error("Update Status Error:", error);
+      toast.error("Failed to update status");
+    }
   };
+
+  const filtered = localDonations.filter(
+    (d) =>
+      d._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.user?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -110,6 +97,8 @@ const DonationsTable = () => {
             <input
               type="text"
               placeholder="Search ID or Donor..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
@@ -132,26 +121,30 @@ const DonationsTable = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {donations.map((d) => (
-              <tr key={d.id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="p-4 pl-6 font-medium text-gray-900">{d.id}</td>
+            {filtered.map((d) => (
+              <tr key={d._id} className="hover:bg-gray-50/50 transition-colors">
+                <td className="p-4 pl-6 font-medium text-gray-900">
+                  #{d._id?.slice(-6)}
+                </td>
                 <td className="p-4">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
-                      {d.donor.charAt(0)}
+                      {d.user?.name?.charAt(0) || "U"}
                     </div>
-                    {d.donor}
+                    {d.user?.name || "Anonymous"}
                   </div>
                 </td>
-                <td className="p-4 font-bold">{d.amount}</td>
+                <td className="p-4 font-bold">${d.amount?.toLocaleString()}</td>
                 <td className="p-4 text-gray-500">{d.type}</td>
-                <td className="p-4 text-gray-500">{d.date}</td>
+                <td className="p-4 text-gray-500">
+                  {new Date(d.createdAt).toLocaleDateString()}
+                </td>
                 <td className="p-4">
                   <span
                     className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
-                      d.status === "Verified"
+                      d.status === "approved"
                         ? "bg-green-50 text-green-700 border-green-200"
-                        : d.status === "Pending"
+                        : d.status === "pending"
                         ? "bg-yellow-50 text-yellow-700 border-yellow-200"
                         : "bg-red-50 text-red-700 border-red-200"
                     }`}
@@ -161,17 +154,17 @@ const DonationsTable = () => {
                 </td>
                 <td className="p-4 pr-6 text-right">
                   <div className="flex justify-end gap-2">
-                    {d.status === "Pending" && (
+                    {d.status === "pending" && (
                       <>
                         <button
-                          onClick={() => handleStatusChange(d.id, "Verified")}
+                          onClick={() => handleStatusChange(d._id, "approved")}
                           className="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors"
                           title="Approve"
                         >
                           <CheckCircle size={18} />
                         </button>
                         <button
-                          onClick={() => handleStatusChange(d.id, "Rejected")}
+                          onClick={() => handleStatusChange(d._id, "rejected")}
                           className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
                           title="Reject"
                         >
@@ -319,6 +312,50 @@ const AdminDashboard = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Real Data State
+  const [stats, setStats] = useState({
+    totalRaised: 0,
+    totalDonations: 0,
+    activeCampaigns: 0,
+    totalDonors: 0,
+    raisedChange: 0,
+    donationsChange: 0,
+    donorsChange: 0,
+  });
+  const [allDonations, setAllDonations] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchData = async () => {
+    try {
+      const statsData = await getAdminStats();
+      setStats(statsData);
+
+      const donationsData = await getAllDonations();
+      setAllDonations(donationsData);
+
+      const usersData = await getAllUsers();
+      setAllUsers(usersData);
+    } catch (error) {
+      console.error("Admin Fetch Error:", error);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        toast.error("Unauthorized access. Redirecting to login.");
+        handleLogout();
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const adminToken = localStorage.getItem("adminToken");
+    if (!adminToken) {
+      navigate("/login");
+      return;
+    }
+    fetchData();
+  }, []);
+
   // Mock Campaign Data State
   const [campaigns, setCampaigns] = useState([
     {
@@ -361,6 +398,7 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("adminToken");
     localStorage.removeItem("user");
     window.dispatchEvent(new Event("loginStateChange"));
     toast.success("Logged out successfully");
@@ -569,29 +607,29 @@ const AdminDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 <StatCard
                   title="Total Raised"
-                  value="$124,500"
-                  change={12.5}
+                  value={`$${stats.totalRaised?.toLocaleString()}`}
+                  change={stats.raisedChange}
                   icon={DollarSign}
                   color="bg-green-100 text-green-600"
                 />
                 <StatCard
                   title="Total Donations"
-                  value="1,240"
-                  change={8.2}
+                  value={stats.totalDonations}
+                  change={stats.donationsChange}
                   icon={CreditCard}
                   color="bg-blue-100 text-blue-600"
                 />
                 <StatCard
                   title="Active Campaigns"
                   value={campaigns.filter((c) => c.status === "Active").length}
-                  change={-2}
+                  change={0}
                   icon={Megaphone}
                   color="bg-purple-100 text-purple-600"
                 />
                 <StatCard
                   title="Total Donors"
-                  value="890"
-                  change={5.4}
+                  value={stats.totalDonors}
+                  change={stats.donorsChange}
                   icon={Users}
                   color="bg-orange-100 text-orange-600"
                 />
@@ -599,7 +637,10 @@ const AdminDashboard = () => {
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
-                  <DonationsTable />
+                  <DonationsTable
+                    donations={allDonations.slice(0, 5)}
+                    onUpdateStatus={fetchData}
+                  />
                 </div>
                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-fit">
                   <h3 className="font-bold text-lg mb-6">
@@ -648,7 +689,10 @@ const AdminDashboard = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <DonationsTable />
+              <DonationsTable
+                donations={allDonations}
+                onUpdateStatus={fetchData}
+              />
             </motion.div>
           )}
 
@@ -791,14 +835,43 @@ const AdminDashboard = () => {
               key="donors"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex items-center justify-center h-96"
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
             >
-              <div className="text-center text-gray-400">
-                <Users size={48} className="mx-auto mb-4 opacity-20" />
-                <h3 className="text-lg font-bold text-gray-900">
-                  Donor Management
-                </h3>
-                <p>Feature coming soon...</p>
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="font-bold text-lg">System Users / Donors</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-gray-500 font-medium">
+                      <th className="p-4 pl-6">Name</th>
+                      <th className="p-4">Email</th>
+                      <th className="p-4">Joined Date</th>
+                      <th className="p-4 pr-6 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {allUsers.map((user) => (
+                      <tr
+                        key={user._id}
+                        className="hover:bg-gray-50/50 transition-colors"
+                      >
+                        <td className="p-4 pl-6 font-medium text-gray-900">
+                          {user.name}
+                        </td>
+                        <td className="p-4 text-gray-500">{user.email}</td>
+                        <td className="p-4 text-gray-500">
+                          {new Date(user.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="p-4 pr-6 text-right">
+                          <button className="text-gray-400 hover:text-red-600 transition-colors">
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </motion.div>
           )}

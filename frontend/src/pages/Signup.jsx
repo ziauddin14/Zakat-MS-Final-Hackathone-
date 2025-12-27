@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { User, Mail, Phone, Lock, ArrowRight, Loader } from "lucide-react";
 import toast from "react-hot-toast";
 import Input from "../components/ui/Input";
+import { registerUser } from "../api/api";
 
 const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,32 +19,48 @@ const Signup = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      console.log("Signup Data:", { ...data, role });
+    try {
+      const response = await registerUser(
+        data.name,
+        data.email,
+        data.password,
+        data.phone,
+        role
+      );
 
-      // Mock successful signup response with JWT
-      const mockResponse = {
-        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock_token_payload",
-        user: { name: data.name, email: data.email, role },
-      };
-
-      // Store JWT
-      localStorage.setItem("token", mockResponse.token);
-      localStorage.setItem("user", JSON.stringify(mockResponse.user));
+      // Store token and user if returned
+      if (response.token) {
+        if (role === "admin") {
+          localStorage.setItem("adminToken", response.token);
+          localStorage.removeItem("token");
+        } else {
+          localStorage.setItem("token", response.token);
+          localStorage.removeItem("adminToken");
+        }
+      }
+      if (response.user) {
+        localStorage.setItem("user", JSON.stringify(response.user));
+      }
 
       // Notify Navbar
       window.dispatchEvent(new Event("loginStateChange"));
 
-      setIsLoading(false);
       toast.success("Account created successfully! Welcome aboard.");
-      // Navigate based on role
+      // Navigate based on role (default to donor dashboard)
       if (role === "admin") {
         navigate("/admin");
       } else {
         navigate("/dashboard");
       }
-    }, 2000);
+    } catch (error) {
+      console.error("Signup Error:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Registration failed. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

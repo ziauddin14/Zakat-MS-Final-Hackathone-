@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight, Loader, Heart } from "lucide-react";
 import toast from "react-hot-toast";
 import Input from "../components/ui/Input";
+import { loginUser, loginAdmin } from "../api/api";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,24 +19,25 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      console.log("Login Data:", { ...data, role });
-
-      // Mock successful login response with JWT
-      const mockResponse = {
-        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock_token_payload",
-        user: { name: "John Doe", email: data.email, role },
-      };
-
-      // Store JWT
-      localStorage.setItem("token", mockResponse.token);
-      localStorage.setItem("user", JSON.stringify(mockResponse.user));
+    try {
+      let response;
+      if (role === "admin") {
+        localStorage.removeItem("token");
+        response = await loginAdmin(data.email, data.password);
+        if (response.user) {
+          localStorage.setItem("user", JSON.stringify(response.user));
+        }
+      } else {
+        localStorage.removeItem("adminToken");
+        response = await loginUser(data.email, data.password);
+        if (response.user) {
+          localStorage.setItem("user", JSON.stringify(response.user));
+        }
+      }
 
       // Notify Navbar
       window.dispatchEvent(new Event("loginStateChange"));
 
-      setIsLoading(false);
       toast.success("Welcome back! Signed in successfully.");
       // Navigate based on role
       if (role === "admin") {
@@ -43,7 +45,15 @@ const Login = () => {
       } else {
         navigate("/dashboard");
       }
-    }, 2000);
+    } catch (error) {
+      console.error("Login Error:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Invalid credentials. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
