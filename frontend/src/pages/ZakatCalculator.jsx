@@ -48,42 +48,48 @@ const ZakatCalculator = () => {
     const fetchRates = async () => {
       try {
         setRatesLoading(true);
-        // Using GoldAPI.io (free tier available)
-        // You can also use: metalpriceapi.com, metals-api.com
+        
+        // NOTE: International API rates don't match Pakistan local market
+        // Using Pakistan local market rates (Sarafa) as default
+        // TODO: Integrate Pakistan-specific API (forex.com.pk, goldpricepakistan.com)
+        
+        // International API (Currently disabled)
         const response = await fetch("https://www.goldapi.io/api/XAU/PKR", {
           headers: {
-            "x-access-token": "goldapi-jm2qrsmjp7dz1i-io", // Replace with actual API key
+            "x-access-token": "goldapi-jm2qrsmjp7dz1i-io",
           },
         });
-
+        
         if (response.ok) {
           const data = await response.json();
-          // Convert from per ounce to per gram (1 oz = 31.1035 grams)
           const goldPerGram = data.price / 31.1035;
           setGoldRate(goldPerGram);
-
-          // For silver, you'd need another API call or use a different endpoint
-          // For now, using a ratio (silver is typically 1/70th of gold price)
           const silverPerGram = goldPerGram / 70;
           setSilverRate(silverPerGram);
-
           setRatesError(false);
         } else {
-          throw new Error("API failed");
+          throw new Error('API failed');
         }
-      } catch (error) {
-        console.log("Using fallback rates:", error);
-        // Use fallback rates (per tola, convert to per gram)
+        
+        
+        // Using Pakistan local market rates (Sarafa)
+        // Update these rates daily from: forex.com.pk or local sarafa market
         setGoldRate(CONSTANTS.FALLBACK_GOLD_RATE / CONSTANTS.TOLA_TO_GRAMS);
         setSilverRate(CONSTANTS.FALLBACK_SILVER_RATE / CONSTANTS.TOLA_TO_GRAMS);
-        setRatesError(true);
+        setRatesError(false);
+        
+      } catch (error) {
+        console.log('Using Pakistan local market rates:', error);
+        setGoldRate(CONSTANTS.FALLBACK_GOLD_RATE / CONSTANTS.TOLA_TO_GRAMS);
+        setSilverRate(CONSTANTS.FALLBACK_SILVER_RATE / CONSTANTS.TOLA_TO_GRAMS);
+        setRatesError(false);
       } finally {
         setRatesLoading(false);
       }
     };
 
     fetchRates();
-    // Refresh rates every hour
+    // Refresh rates every hour (in case we add live API later)
     const interval = setInterval(fetchRates, 3600000);
     return () => clearInterval(interval);
   }, []);
@@ -308,13 +314,13 @@ const ZakatCalculator = () => {
               <div className="space-y-4">
                 <InputField
                   icon={Building2}
-                  label="Business Stock Value"
+                  label="Total Value : (Business Stock / Plots / Properties / Vehicles / Other Assets)"
                   inputRef={businessStockRef}
                   placeholder="0"
                 />
                 <InputField
                   icon={FileText}
-                  label="Money Expected to be Received"
+                  label="Money Expected to be Received (Total Value)"
                   inputRef={receivablesRef}
                   placeholder="0"
                 />
@@ -337,7 +343,7 @@ const ZakatCalculator = () => {
               <div className="space-y-4">
                 <InputField
                   icon={CreditCard}
-                  label="Short-term Debts & Bills"
+                  label="Short-term Debts & Bills (Total Value)"
                   inputRef={liabilitiesRef}
                   placeholder="0"
                 />
