@@ -4,6 +4,12 @@ import axios from "axios";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const getHeaders = () => {
+  // One-time cleanup for any "undefined" strings accidental stored
+  ["token", "adminToken", "user"].forEach((key) => {
+    const val = localStorage.getItem(key);
+    if (val === "undefined" || val === "null") localStorage.removeItem(key);
+  });
+
   const token =
     localStorage.getItem("token") || localStorage.getItem("adminToken");
   return { Authorization: token ? `Bearer ${token}` : "" };
@@ -17,7 +23,7 @@ export const registerUser = async (
   email,
   password,
   phone,
-  role = "donor"
+  role = "user"
 ) => {
   const { data } = await axios.post(`${API_URL}/auth/register`, {
     name,
@@ -50,30 +56,95 @@ export const getUserProfile = async () => {
   return data;
 };
 
+// ---------------- CAMPAIGNS ----------------
+
+// Get All Campaigns (Public)
+export const getCampaigns = async () => {
+  const { data } = await axios.get(`${API_URL}/campaigns`);
+  return data;
+};
+
+// Create Campaign (Admin)
+export const createCampaign = async (campaignData) => {
+  try {
+    console.log("Creating Campaign Payload:", campaignData);
+    const { data } = await axios.post(`${API_URL}/campaigns`, campaignData, {
+      headers: getHeaders(),
+    });
+    return data;
+  } catch (error) {
+    console.error(
+      "API createCampaign details:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+// Update Campaign (Admin)
+export const updateCampaign = async (id, campaignData) => {
+  try {
+    console.log("Updating Campaign Payload:", campaignData);
+    const { data } = await axios.put(
+      `${API_URL}/campaigns/${id}`,
+      campaignData,
+      {
+        headers: getHeaders(),
+      }
+    );
+    return data;
+  } catch (error) {
+    console.error(
+      "API updateCampaign details:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+// Delete Campaign (Admin)
+export const deleteCampaign = async (id) => {
+  const { data } = await axios.delete(`${API_URL}/campaigns/${id}`, {
+    headers: getHeaders(),
+  });
+  return data;
+};
+
 // ---------------- DONATIONS ----------------
 
 // Create Donation
 export const createDonation = async (donationData) => {
-  // Mapping frontend values to match backend Mongoose schema strictly
-  const payload = {
-    amount: Number(donationData.amount),
-    // Mapping 'Sadaqah' to backend's spelling 'Sadqah' if needed,
-    // but the user's frontend uses 'Sadaqah'.
-    // Based on the schema provided: enum: ["Zakat", "Sadqah", "Fitra", "General"]
-    donationType:
-      donationData.type === "Sadaqah" ? "Sadqah" : donationData.type,
-    paymentMethod:
-      donationData.method === "card" || donationData.method === "paypal"
-        ? "Online"
-        : "Cash",
-  };
+  try {
+    const payload = {
+      amount: Number(donationData.amount),
+      donationType: donationData.type, // Frontend already uses 'Sadqah', 'Zakat', etc.
+      paymentMethod:
+        donationData.method === "card" || donationData.method === "paypal"
+          ? "Online"
+          : donationData.method === "Bank"
+          ? "Bank"
+          : "Cash",
+      category: donationData.category || "General",
+      message: donationData.message || "",
+    };
 
-  console.log("Sending Schema Matched Payload:", payload);
+    if (donationData.campaignId) {
+      payload.campaignId = donationData.campaignId;
+    }
 
-  const { data } = await axios.post(`${API_URL}/donations`, payload, {
-    headers: getHeaders(),
-  });
-  return data;
+    console.log("Donation Attempt Payload:", payload);
+
+    const { data } = await axios.post(`${API_URL}/donations`, payload, {
+      headers: getHeaders(),
+    });
+    return data;
+  } catch (error) {
+    console.error(
+      "API createDonation details:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
 };
 
 // Get My Donations
@@ -125,12 +196,29 @@ export const getAllDonations = async () => {
 
 // Update Donation Status (Admin)
 export const updateDonationStatus = async (donationId, status) => {
-  const { data } = await axios.put(
-    `${API_URL}/admin/donation/${donationId}`,
-    { status },
-    {
-      headers: getHeaders(),
-    }
-  );
-  return data;
+  try {
+    const { data } = await axios.put(
+      `${API_URL}/donations/${donationId}/status`,
+      { status },
+      {
+        headers: getHeaders(),
+      }
+    );
+    return data;
+  } catch (error) {
+    console.error(
+      "API updateDonationStatus details:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+// Download Receipt
+export const downloadReceipt = async (donationId) => {
+  const response = await axios.get(`${API_URL}/receipt/${donationId}`, {
+    headers: getHeaders(),
+    responseType: "blob",
+  });
+  return response.data;
 };

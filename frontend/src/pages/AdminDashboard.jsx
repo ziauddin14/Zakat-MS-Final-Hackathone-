@@ -20,6 +20,7 @@ import {
   Trash2,
   Menu,
   X,
+  Download,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -30,6 +31,11 @@ import {
   getAllDonations,
   getAllUsers,
   updateDonationStatus,
+  downloadReceipt,
+  getCampaigns,
+  createCampaign,
+  updateCampaign,
+  deleteCampaign,
 } from "../api/api";
 import { useEffect } from "react";
 
@@ -78,6 +84,22 @@ const DonationsTable = ({ donations, onUpdateStatus }) => {
     }
   };
 
+  const handleDownloadReceipt = async (donationId) => {
+    try {
+      const blob = await downloadReceipt(donationId);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `receipt-${donationId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      console.error("Download Error:", error);
+      toast.error("Failed to download receipt");
+    }
+  };
+
   const filtered = localDonations.filter(
     (d) =>
       d._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -111,22 +133,19 @@ const DonationsTable = ({ donations, onUpdateStatus }) => {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="bg-gray-50 text-gray-500 font-medium">
-              <th className="p-4 pl-6">ID</th>
-              <th className="p-4">Donor</th>
+              <th className="p-4 pl-6">Donor</th>
+              <th className="p-4">Campaign</th>
               <th className="p-4">Amount</th>
               <th className="p-4">Type</th>
-              <th className="p-4">Date</th>
-              <th className="p-4">Status</th>
+              <th className="p-4">Category</th>
+              <th className="p-4 text-center">Status</th>
               <th className="p-4 pr-6 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filtered.map((d) => (
               <tr key={d._id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="p-4 pl-6 font-medium text-gray-900">
-                  #{d._id?.slice(-6)}
-                </td>
-                <td className="p-4">
+                <td className="p-4 pl-6">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
                       {d.user?.name?.charAt(0) || "U"}
@@ -134,12 +153,13 @@ const DonationsTable = ({ donations, onUpdateStatus }) => {
                     {d.user?.name || "Anonymous"}
                   </div>
                 </td>
-                <td className="p-4 font-bold">${d.amount?.toLocaleString()}</td>
-                <td className="p-4 text-gray-500">{d.type}</td>
-                <td className="p-4 text-gray-500">
-                  {new Date(d.createdAt).toLocaleDateString()}
+                <td className="p-4 text-gray-500 italic">
+                  {d.campaignId?.title || "General"}
                 </td>
-                <td className="p-4">
+                <td className="p-4 font-bold">${d.amount?.toLocaleString()}</td>
+                <td className="p-4 text-gray-500">{d.donationType}</td>
+                <td className="p-4 text-gray-500">{d.category || "General"}</td>
+                <td className="p-4 text-center">
                   <span
                     className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
                       d.status === "approved"
@@ -172,6 +192,15 @@ const DonationsTable = ({ donations, onUpdateStatus }) => {
                         </button>
                       </>
                     )}
+                    {d.status === "approved" && (
+                      <button
+                        onClick={() => handleDownloadReceipt(d._id)}
+                        className="p-1.5 text-primary hover:bg-primary/5 rounded-md transition-colors"
+                        title="Download Receipt"
+                      >
+                        <Download size={18} />
+                      </button>
+                    )}
                     <button className="p-1.5 text-gray-400 hover:text-gray-600">
                       <MoreHorizontal size={18} />
                     </button>
@@ -191,10 +220,11 @@ const CampaignForm = ({ initialData, onSubmit, onCancel }) => {
     defaultValues: initialData || {
       title: "",
       category: "Emergency",
-      goal: "",
+      goalAmount: "",
+      startDate: new Date().toISOString().split("T")[0],
       endDate: "",
       description: "",
-      status: "Active", // Default status
+      status: "Active",
     },
   });
 
@@ -250,10 +280,14 @@ const CampaignForm = ({ initialData, onSubmit, onCancel }) => {
           <Input
             label="Goal Amount ($)"
             type="number"
-            {...register("goal", { required: true })}
+            {...register("goalAmount", { required: true })}
             placeholder="5000"
           />
           <Input label="End Date" type="date" {...register("endDate")} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Input label="Start Date" type="date" {...register("startDate")} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -324,18 +358,37 @@ const AdminDashboard = () => {
   });
   const [allDonations, setAllDonations] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
     try {
       const statsData = await getAdminStats();
-      setStats(statsData);
-
       const donationsData = await getAllDonations();
-      setAllDonations(donationsData);
-
       const usersData = await getAllUsers();
+      const campaignsData = await getCampaigns();
+
+      // Calculate total raised from approved donations
+      const totalRaised = (donationsData || []).reduce(
+        (acc, d) => acc + (d.status === "approved" ? Number(d.amount) || 0 : 0),
+        0
+      );
+
+      setStats({
+        totalRaised: totalRaised,
+        totalDonations: Number(statsData.totalDonations) || 0,
+        totalDonors: Number(statsData.totalUsers) || 0,
+        activeCampaigns: (campaignsData || []).filter(
+          (c) => c?.status === "Active"
+        ).length,
+        raisedChange: 12.5,
+        donationsChange: 8.2,
+        donorsChange: 5.1,
+      });
+
+      setAllDonations(donationsData);
       setAllUsers(usersData);
+      setCampaigns(campaignsData);
     } catch (error) {
       console.error("Admin Fetch Error:", error);
       if (error.response?.status === 401 || error.response?.status === 403) {
@@ -356,46 +409,6 @@ const AdminDashboard = () => {
     fetchData();
   }, []);
 
-  // Mock Campaign Data State
-  const [campaigns, setCampaigns] = useState([
-    {
-      id: 1,
-      title: "Winter Relief 2024",
-      description: "Emergency blankets and food...",
-      category: "Emergency",
-      goal: 20000,
-      raised: 12500,
-      endDate: "2024-12-31",
-      status: "Active",
-      image:
-        "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=500&auto=format&fit=crop&q=60",
-    },
-    {
-      id: 2,
-      title: "Clean Water for Mali",
-      description: "Drilling deep wells in rural areas.",
-      category: "Water",
-      goal: 15000,
-      raised: 5000,
-      endDate: "2024-11-20",
-      status: "Active",
-      image:
-        "https://images.unsplash.com/photo-1579706497230-044033284701?w=500&auto=format&fit=crop&q=60",
-    },
-    {
-      id: 3,
-      title: "Orphan Sponsorship",
-      description: "Providing education and care.",
-      category: "Education",
-      goal: 50000,
-      raised: 45000,
-      endDate: "2024-10-15",
-      status: "Completed",
-      image:
-        "https://images.unsplash.com/photo-1490126786801-7fa0939d73d6?w=500&auto=format&fit=crop&q=60",
-    },
-  ]);
-
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("adminToken");
@@ -406,34 +419,38 @@ const AdminDashboard = () => {
   };
 
   // CRUD Handlers
-  const handleSaveCampaign = (data) => {
-    if (editingCampaign) {
-      // Update
-      setCampaigns(
-        campaigns.map((c) =>
-          c.id === editingCampaign.id
-            ? { ...c, ...data, raised: c.raised, image: c.image }
-            : c
-        )
-      );
-      toast.success("Campaign updated successfully!");
-      setEditingCampaign(null);
-    } else {
-      // Create
-      const newCampaign = {
-        id: Date.now(),
+  const handleSaveCampaign = async (data) => {
+    try {
+      // Robust payload preparation
+      const payload = {
         ...data,
-        raised: 0,
+        goalAmount: Number(data.goalAmount),
+        raised: editingCampaign ? editingCampaign.raised : 0,
         image:
-          "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=500&auto=format&fit=crop&q=60", // Placeholder
+          data.image ||
+          "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=500&auto=format&fit=crop&q=60",
       };
-      setCampaigns([newCampaign, ...campaigns]);
-      toast.success("New campaign launched successfully!");
+
+      if (editingCampaign) {
+        await updateCampaign(editingCampaign._id, payload);
+        toast.success("Campaign updated successfully!");
+      } else {
+        await createCampaign(payload);
+        toast.success("New campaign launched successfully!");
+      }
+      fetchData(); // Refresh list
+      setEditingCampaign(null);
+      setIsCreatingCampaign(false);
+    } catch (error) {
+      console.error(
+        "Save Campaign Error Details:",
+        error.response?.data || error.message
+      );
+      toast.error(error.response?.data?.message || "Failed to save campaign");
     }
-    setIsCreatingCampaign(false);
   };
 
-  const handleDeleteCampaign = (id) => {
+  const handleDeleteCampaign = async (id) => {
     toast.custom((t) => (
       <div
         className={`${
@@ -460,10 +477,15 @@ const AdminDashboard = () => {
         </div>
         <div className="flex border-l border-gray-200">
           <button
-            onClick={() => {
-              setCampaigns(campaigns.filter((c) => c.id !== id));
-              toast.dismiss(t.id);
-              toast.success("Campaign deleted successfully");
+            onClick={async () => {
+              try {
+                await deleteCampaign(id);
+                toast.dismiss(t.id);
+                toast.success("Campaign deleted successfully");
+                fetchData();
+              } catch (error) {
+                toast.error("Failed to delete");
+              }
             }}
             className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-red-600 hover:text-red-500 focus:outline-none"
           >
@@ -489,7 +511,9 @@ const AdminDashboard = () => {
   const filteredCampaigns =
     filterStatus === "All"
       ? campaigns
-      : campaigns.filter((c) => c.status === filterStatus);
+      : campaigns.filter(
+          (c) => c.status?.toLowerCase() === filterStatus.toLowerCase()
+        );
 
   const tabs = [
     { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -621,7 +645,7 @@ const AdminDashboard = () => {
                 />
                 <StatCard
                   title="Active Campaigns"
-                  value={campaigns.filter((c) => c.status === "Active").length}
+                  value={stats.activeCampaigns}
                   change={0}
                   icon={Megaphone}
                   color="bg-purple-100 text-purple-600"
@@ -648,13 +672,16 @@ const AdminDashboard = () => {
                   </h3>
                   <div className="space-y-6">
                     {campaigns.slice(0, 3).map((campaign) => (
-                      <div key={campaign.id}>
+                      <div key={campaign._id || campaign.id}>
                         <div className="flex justify-between text-sm mb-2">
                           <span className="font-medium line-clamp-1 w-2/3">
                             {campaign.title}
                           </span>
                           <span className="font-bold text-gray-900">
-                            ${campaign.raised / 1000}k / ${campaign.goal / 1000}
+                            ${((campaign.raised || 0) / 1000).toFixed(1)}k / $
+                            {(
+                              (campaign.goalAmount || campaign.goal || 0) / 1000
+                            ).toFixed(1)}
                             k
                           </span>
                         </div>
@@ -663,7 +690,9 @@ const AdminDashboard = () => {
                             className="bg-primary h-2 rounded-full"
                             style={{
                               width: `${Math.min(
-                                (campaign.raised / campaign.goal) * 100,
+                                ((campaign.raised || 0) /
+                                  (campaign.goalAmount || campaign.goal || 1)) *
+                                  100,
                                 100
                               )}%`,
                             }}
@@ -748,13 +777,16 @@ const AdminDashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {filteredCampaigns.map((campaign) => (
                         <div
-                          key={campaign.id}
+                          key={campaign._id || campaign.id}
                           className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full"
                         >
                           <div className="h-40 bg-gray-200 relative">
                             <img
-                              src={campaign.image}
-                              alt={campaign.title}
+                              src={
+                                campaign.image ||
+                                "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=500&auto=format&fit=crop&q=60"
+                              }
+                              alt={campaign.title || "Campaign"}
                               className="w-full h-full object-cover"
                             />
                             <span
@@ -764,22 +796,27 @@ const AdminDashboard = () => {
                                   : "bg-gray-800/80 text-white"
                               }`}
                             >
-                              {campaign.status}
+                              {campaign.status || "N/A"}
                             </span>
                           </div>
                           <div className="p-5 flex flex-col flex-grow">
                             <h4 className="font-bold text-lg mb-1 line-clamp-1">
-                              {campaign.title}
+                              {campaign.title || "Untitled Campaign"}
                             </h4>
                             <p className="text-gray-500 text-sm mb-4 line-clamp-2 flex-grow">
-                              {campaign.description}
+                              {campaign.description ||
+                                "No description provided."}
                             </p>
                             <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
                               <div
                                 className="bg-primary h-1.5 rounded-full"
                                 style={{
                                   width: `${Math.min(
-                                    (campaign.raised / campaign.goal) * 100,
+                                    ((campaign.raised || 0) /
+                                      (campaign.goalAmount ||
+                                        campaign.goal ||
+                                        1)) *
+                                      100,
                                     100
                                   )}%`,
                                 }}
@@ -787,9 +824,17 @@ const AdminDashboard = () => {
                             </div>
                             <div className="flex justify-between items-center text-sm mb-4">
                               <span className="font-bold">
-                                ${campaign.raised.toLocaleString()}{" "}
+                                $
+                                {(
+                                  Number(campaign.raised) || 0
+                                ).toLocaleString()}{" "}
                                 <span className="text-gray-400 font-normal">
-                                  of ${campaign.goal.toLocaleString()}
+                                  of $
+                                  {(
+                                    Number(campaign.goalAmount) ||
+                                    Number(campaign.goal) ||
+                                    0
+                                  ).toLocaleString()}
                                 </span>
                               </span>
                             </div>
@@ -803,7 +848,9 @@ const AdminDashboard = () => {
                               </button>
                               <button
                                 onClick={() =>
-                                  handleDeleteCampaign(campaign.id)
+                                  handleDeleteCampaign(
+                                    campaign._id || campaign.id
+                                  )
                                 }
                                 className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
                                 title="Delete Campaign"

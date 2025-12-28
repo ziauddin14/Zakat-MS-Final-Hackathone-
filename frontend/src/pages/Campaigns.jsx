@@ -2,15 +2,20 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Filter, Clock, Users, ArrowRight, Heart } from "lucide-react";
+import { getCampaigns } from "../api/api";
+import { useEffect } from "react";
 
 const CampaignCard = ({ campaign, index }) => {
-  const percent = Math.min((campaign.raised / campaign.goal) * 100, 100);
+  const percent = Math.min(
+    (campaign.raised / (campaign.goalAmount || campaign.goal || 1)) * 100,
+    100
+  );
   const navigate = useNavigate();
 
   const handleDonateClick = () => {
     const token = localStorage.getItem("token");
     if (token) {
-      navigate(`/donate?campaign=${campaign.id}`);
+      navigate(`/donate?campaign=${campaign._id || campaign.id}`);
     } else {
       navigate("/login");
     }
@@ -53,10 +58,10 @@ const CampaignCard = ({ campaign, index }) => {
         <div className="space-y-3 mb-6">
           <div className="flex justify-between text-sm font-semibold">
             <span className="text-primary">
-              ${campaign.raised.toLocaleString()}
+              ${(campaign.raised || 0).toLocaleString()}
             </span>
             <span className="text-gray-400">
-              of ${campaign.goal.toLocaleString()}
+              of ${(campaign.goalAmount || campaign.goal || 0).toLocaleString()}
             </span>
           </div>
           <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -80,9 +85,25 @@ const CampaignCard = ({ campaign, index }) => {
         {/* Action */}
         <button
           onClick={handleDonateClick}
-          className="w-full py-3 bg-gray-50 hover:bg-primary hover:text-white text-gray-900 font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group-hover/btn relative overflow-hidden"
+          disabled={
+            campaign.status === "Completed" || campaign.raised >= campaign.goal
+          }
+          className={`w-full py-3 font-semibold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden ${
+            campaign.status === "Completed" || campaign.raised >= campaign.goal
+              ? "bg-green-50 text-green-600 cursor-not-allowed"
+              : "bg-gray-50 hover:bg-primary hover:text-white text-gray-900 group-hover/btn"
+          }`}
         >
-          Donate Now <ArrowRight size={18} />
+          {campaign.status === "Completed" ||
+          campaign.raised >= campaign.goal ? (
+            <>
+              Goal Reached! <Heart size={18} fill="currentColor" />
+            </>
+          ) : (
+            <>
+              Donate Now <ArrowRight size={18} />
+            </>
+          )}
         </button>
       </div>
     </motion.div>
@@ -91,6 +112,23 @@ const CampaignCard = ({ campaign, index }) => {
 
 const Campaigns = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [campaigns, setCampaigns] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        const data = await getCampaigns();
+        setCampaigns(data);
+      } catch (error) {
+        console.error("Fetch Campaigns Error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCampaigns();
+  }, []);
 
   const categories = [
     "All",
@@ -101,91 +139,20 @@ const Campaigns = () => {
     "Orphans",
   ];
 
-  const campaigns = [
-    {
-      id: 1,
-      title: "Emergency Food for Gaza",
-      description:
-        "Provide urgent food parcels and clean water to families displaced by conflict. Your donation saves lives.",
-      image:
-        "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      category: "Emergency",
-      raised: 25000,
-      goal: 50000,
-      donors: 1420,
-      daysLeft: 12,
-    },
-    {
-      id: 2,
-      title: "Build a Water Well in Mali",
-      description:
-        "Give the gift of life. A shortage of clean water causes disease and poverty. Help us build a deep well.",
-      image:
-        "https://images.unsplash.com/photo-1579706497230-044033284701?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      category: "Water",
-      raised: 3200,
-      goal: 4500,
-      donors: 85,
-      daysLeft: 45,
-    },
-    {
-      id: 3,
-      title: "Sponsor an Orphan's Education",
-      description:
-        "Empower a child with education. Cover school fees, books, and uniforms for one academic year.",
-      image:
-        "https://images.unsplash.com/photo-1490126786801-7fa0939d73d6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      category: "Education",
-      raised: 8500,
-      goal: 12000,
-      donors: 310,
-      daysLeft: 20,
-    },
-    {
-      id: 4,
-      title: "Winter Blankets for Refugees",
-      description:
-        "Winter is coming. Thousands of refugees are living in tents without hearing. Provide warm blankets.",
-      image:
-        "https://images.unsplash.com/photo-1542888258-292c30f40d6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      category: "Emergency",
-      raised: 15400,
-      goal: 20000,
-      donors: 890,
-      daysLeft: 5,
-    },
-    {
-      id: 5,
-      title: "Zakat for Local Families",
-      description:
-        "Support struggling families in your local community with Zakat Al-Mal distribution.",
-      image:
-        "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      category: "Zakat",
-      raised: 45000,
-      goal: 100000,
-      donors: 2100,
-      daysLeft: 60,
-    },
-    {
-      id: 6,
-      title: "Medical Aid for Syria",
-      description:
-        "Providing critical medical supplies and trauma care to war-torn regions.",
-      image:
-        "https://images.unsplash.com/photo-1584515933487-9dca74251094?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      category: "Emergency",
-      raised: 12000,
-      goal: 60000,
-      donors: 450,
-      daysLeft: 18,
-    },
-  ];
+  const filteredCampaigns = campaigns.filter((c) => {
+    // Category filter
+    const categoryMatch =
+      selectedCategory === "All" ||
+      c.category?.toLowerCase() === selectedCategory.toLowerCase();
 
-  const filteredCampaigns =
-    selectedCategory === "All"
-      ? campaigns
-      : campaigns.filter((c) => c.category === selectedCategory);
+    // Search filter
+    const searchMatch =
+      !searchTerm ||
+      c.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.description?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    return categoryMatch && searchMatch;
+  });
 
   return (
     <div className="min-h-screen bg-background pt-28 pb-20 px-4 sm:px-6">
@@ -244,17 +211,29 @@ const Campaigns = () => {
             <input
               type="text"
               placeholder="Search campaigns..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-white border-0 rounded-xl py-2.5 pl-10 pr-4 shadow-sm text-sm focus:ring-2 focus:ring-primary/20 transition-shadow"
             />
           </div>
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredCampaigns.map((campaign, idx) => (
-            <CampaignCard key={campaign.id} campaign={campaign} index={idx} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredCampaigns.map((campaign, idx) => (
+              <CampaignCard
+                key={campaign._id || campaign.id}
+                campaign={campaign}
+                index={idx}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

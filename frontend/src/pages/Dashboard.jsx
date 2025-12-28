@@ -11,10 +11,17 @@ import {
   PieChart,
   ArrowUpRight,
   LogOut,
+  Megaphone,
+  ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { getUserProfile, getMyDonations } from "../api/api";
+import {
+  getUserProfile,
+  getMyDonations,
+  downloadReceipt,
+  getCampaigns,
+} from "../api/api";
 import { useEffect, useState } from "react";
 
 const StatCard = ({ title, value, subtitle, icon: Icon, delay }) => (
@@ -66,6 +73,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [donations, setDonations] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -76,6 +84,11 @@ const Dashboard = () => {
 
         const donationsData = await getMyDonations();
         setDonations(donationsData);
+
+        const campaignsData = await getCampaigns();
+        setCampaigns(
+          campaignsData.filter((c) => c.status === "Active").slice(0, 3)
+        );
       } catch (error) {
         console.error("Fetch Dashboard Error:", error);
         // If unauthorized, redirect to login
@@ -97,6 +110,22 @@ const Dashboard = () => {
     window.dispatchEvent(new Event("loginStateChange"));
     toast.success("Logged out successfully");
     navigate("/");
+  };
+
+  const handleDownloadReceipt = async (donationId) => {
+    try {
+      const blob = await downloadReceipt(donationId);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `receipt-${donationId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      console.error("Download Error:", error);
+      toast.error("Failed to download receipt");
+    }
   };
 
   const totalDonated = donations.reduce(
@@ -154,7 +183,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard
             title="Total Donated"
-            value={`$${totalDonated.toLocaleString()}`}
+            value={`$${(totalDonated || 0).toLocaleString()}`}
             subtitle="Verified donations only"
             icon={TrendingUp}
             delay={0.1}
@@ -162,11 +191,13 @@ const Dashboard = () => {
           <StatCard
             title="Last Donation"
             value={
-              lastDonation ? `$${lastDonation.amount.toLocaleString()}` : "$0"
+              lastDonation
+                ? `$${(lastDonation.amount || 0).toLocaleString()}`
+                : "$0"
             }
             subtitle={
               lastDonation
-                ? `${lastDonation.type} • ${new Date(
+                ? `${lastDonation.donationType} • ${new Date(
                     lastDonation.createdAt
                   ).toLocaleDateString()}`
                 : "No donations yet"
@@ -204,6 +235,7 @@ const Dashboard = () => {
               <thead>
                 <tr className="bg-gray-50/50 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-gray-100">
                   <th className="p-4 pl-6">Type & Date</th>
+                  <th className="p-4">Category</th>
                   <th className="p-4">Amount</th>
                   <th className="p-4">Status</th>
                   <th className="p-4 pr-6 text-right">Receipt</th>
@@ -212,12 +244,12 @@ const Dashboard = () => {
               <tbody className="divide-y divide-gray-100">
                 {donations.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="p-12 text-center text-gray-400">
+                    <td colSpan="5" className="p-12 text-center text-gray-400">
                       No donations found. Start your journey of giving today!
                     </td>
                   </tr>
                 ) : (
-                  donations.map((tx, index) => (
+                  donations.slice(0, 5).map((tx, index) => (
                     <motion.tr
                       key={tx._id || tx.id}
                       initial={{ opacity: 0, y: 10 }}
@@ -227,7 +259,7 @@ const Dashboard = () => {
                     >
                       <td className="p-4 pl-6">
                         <div className="font-semibold text-gray-900">
-                          {tx.type}
+                          {tx.donationType}
                         </div>
                         <div className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
                           <Calendar size={10} />{" "}
@@ -235,20 +267,28 @@ const Dashboard = () => {
                         </div>
                       </td>
                       <td className="p-4">
+                        <span className="text-sm text-gray-600 font-medium">
+                          {tx.category || "General"}
+                        </span>
+                      </td>
+                      <td className="p-4">
                         <span className="font-bold text-gray-900">
-                          ${tx.amount.toLocaleString()}
+                          ${(tx.amount || 0).toLocaleString()}
                         </span>
                       </td>
                       <td className="p-4">
                         <StatusBadge status={tx.status} />
                       </td>
                       <td className="p-4 pr-6 text-right">
-                        <button
-                          className="text-gray-400 hover:text-primary transition-colors p-2 rounded-lg hover:bg-primary/5 group-hover:visible"
-                          title="Download Receipt"
-                        >
-                          <Download size={18} />
-                        </button>
+                        {tx.status === "approved" && (
+                          <button
+                            onClick={() => handleDownloadReceipt(tx._id)}
+                            className="text-gray-400 hover:text-primary transition-colors p-2 rounded-lg hover:bg-primary/5 group-hover:visible"
+                            title="Download Receipt"
+                          >
+                            <Download size={18} />
+                          </button>
+                        )}
                       </td>
                     </motion.tr>
                   ))
@@ -257,6 +297,100 @@ const Dashboard = () => {
             </table>
           </div>
         </motion.div>
+
+        {/* Campaign Section */}
+        <section className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-xl text-gray-900 flex items-center gap-2">
+              <Megaphone size={20} className="text-primary" /> Active Campaigns
+            </h3>
+            <button
+              onClick={() => navigate("/campaigns")}
+              className="text-primary text-sm font-bold flex items-center gap-1"
+            >
+              See All <ArrowRight size={16} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {campaigns.map((campaign) => (
+              <div
+                key={campaign._id}
+                className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col"
+              >
+                <div className="h-32 bg-gray-200">
+                  <img
+                    src={campaign.image}
+                    alt={campaign.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="p-5 flex flex-col flex-grow">
+                  <h4 className="font-bold text-gray-900 mb-2 line-clamp-1">
+                    {campaign.title}
+                  </h4>
+                  <div className="mt-auto">
+                    <div className="flex justify-between text-xs mb-1 font-semibold">
+                      <span>
+                        <span className="text-primary">
+                          ${(campaign.raised || 0).toLocaleString()}
+                        </span>
+                        <span className="text-gray-400">
+                          {" "}
+                          of $
+                          {(
+                            campaign.goalAmount ||
+                            campaign.goal ||
+                            0
+                          ).toLocaleString()}
+                        </span>
+                      </span>
+                      <span className="text-primary">
+                        {Math.min(
+                          Math.round(
+                            ((campaign.raised || 0) /
+                              (campaign.goalAmount || campaign.goal || 1)) *
+                              100
+                          ),
+                          100
+                        )}
+                        %
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden mb-4">
+                      <div
+                        className="bg-primary h-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(
+                            (campaign.raised /
+                              (campaign.goalAmount || campaign.goal || 1)) *
+                              100,
+                            100
+                          )}%`,
+                        }}
+                      ></div>
+                    </div>
+                    <button
+                      onClick={() =>
+                        navigate(`/donate?campaign=${campaign._id}`)
+                      }
+                      disabled={campaign.raised >= campaign.goal}
+                      className={`w-full py-2 rounded-lg text-sm font-bold transition-all ${
+                        campaign.raised >= campaign.goal
+                          ? "bg-green-50 text-green-600 cursor-not-allowed"
+                          : "bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                      }`}
+                    >
+                      {campaign.raised >= campaign.goal
+                        ? "Goal Reached!"
+                        : "Donate"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );

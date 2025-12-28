@@ -9,7 +9,7 @@ import { loginUser, loginAdmin } from "../api/api";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [role, setRole] = useState("donor"); // 'donor' | 'admin'
+  const [role, setRole] = useState("user"); // 'user' | 'admin'
   const navigate = useNavigate();
   const {
     register,
@@ -88,9 +88,9 @@ const Login = () => {
               <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
                 <button
                   type="button"
-                  onClick={() => setRole("donor")}
+                  onClick={() => setRole("user")}
                   className={`flex-1 py-3 rounded-lg font-medium transition-all ${
-                    role === "donor"
+                    role === "user"
                       ? "bg-white shadow-sm text-primary"
                       : "text-gray-500 hover:text-gray-700"
                   }`}

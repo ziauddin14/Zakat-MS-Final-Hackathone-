@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,13 +13,15 @@ import {
 import Input from "../components/ui/Input";
 import { createDonation } from "../api/api";
 import toast from "react-hot-toast";
-import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 const Donate = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const campaignId = searchParams.get("campaign");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
   useEffect(() => {
     const token =
       localStorage.getItem("token") || localStorage.getItem("adminToken");
@@ -27,7 +29,7 @@ const Donate = () => {
       toast.error("Please login to make a donation.");
       navigate("/login");
     }
-  }, []);
+  }, [navigate]);
 
   const {
     register,
@@ -38,16 +40,16 @@ const Donate = () => {
   } = useForm({
     defaultValues: {
       amount: 100,
-      type: "Zakat",
+      type: "Sadqah",
       method: "card",
+      category: "General",
     },
   });
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const selectedAmount = watch("amount");
   const selectedType = watch("type");
   const selectedMethod = watch("method");
+  const selectedCategory = watch("category");
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -67,6 +69,7 @@ const Donate = () => {
 
   const presetAmounts = [50, 100, 250, 500, 1000];
   const donationTypes = ["Zakat", "Sadqah", "Fitra", "General"];
+  const donationCategories = ["Food", "Education", "Medical", "General"];
 
   if (isSuccess) {
     return (
@@ -92,12 +95,12 @@ const Donate = () => {
           >
             Make Another Donation
           </button>
-          <a
-            href="/dashboard"
-            className="block mt-4 text-sm font-medium text-gray-500 hover:text-primary"
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="w-full mt-4 text-sm font-medium text-gray-500 hover:text-primary bg-transparent border-none cursor-pointer"
           >
             Go to Dashboard
-          </a>
+          </button>
         </motion.div>
       </div>
     );
@@ -111,14 +114,14 @@ const Donate = () => {
             Complete Your Donation
           </h1>
           <p className="text-gray-500">
-            Secure, transparent, and immediate impact.
+            {campaignId
+              ? "Your donation is contributing to a specific campaign."
+              : "Secure, transparent, and immediate impact."}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Main Form */}
           <div className="md:col-span-2 space-y-8">
-            {/* 1. Donation Amount */}
             <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
                 <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm">
@@ -126,7 +129,6 @@ const Donate = () => {
                 </div>
                 Choose Amount
               </h2>
-
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-6">
                 {presetAmounts.map((amt) => (
                   <button
@@ -143,7 +145,6 @@ const Donate = () => {
                   </button>
                 ))}
               </div>
-
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                   <DollarSign size={20} />
@@ -157,7 +158,6 @@ const Donate = () => {
               </div>
             </section>
 
-            {/* 2. Donation Details */}
             <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
                 <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm">
@@ -165,7 +165,6 @@ const Donate = () => {
                 </div>
                 Donation Details
               </h2>
-
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -187,7 +186,28 @@ const Donate = () => {
                       </button>
                     ))}
                   </div>
-                  <input type="hidden" {...register("type")} />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Target Category
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {donationCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setValue("category", cat)}
+                        className={`py-3 px-2 rounded-xl text-sm font-medium border-2 transition-all ${
+                          selectedCategory === cat
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-gray-100 text-gray-600 hover:border-gray-200"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <Input
@@ -198,7 +218,6 @@ const Donate = () => {
               </div>
             </section>
 
-            {/* 3. Payment Method */}
             <section className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
                 <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm">
@@ -206,7 +225,6 @@ const Donate = () => {
                 </div>
                 Payment Method
               </h2>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div
                   onClick={() => setValue("method", "card")}
@@ -226,14 +244,9 @@ const Donate = () => {
                     <CreditCard size={20} />
                   </div>
                   <div>
-                    <div className="font-bold text-gray-900">
-                      Credit / Debit Card
-                    </div>
+                    <div className="font-bold text-gray-900">Credit Card</div>
                     <div className="text-xs text-gray-500">Stripe Secure</div>
                   </div>
-                  {selectedMethod === "card" && (
-                    <CheckCircle size={20} className="ml-auto text-primary" />
-                  )}
                 </div>
                 <div
                   onClick={() => setValue("method", "paypal")}
@@ -256,20 +269,14 @@ const Donate = () => {
                     <div className="font-bold text-gray-900">PayPal</div>
                     <div className="text-xs text-gray-500">Fast Checkout</div>
                   </div>
-                  {selectedMethod === "paypal" && (
-                    <CheckCircle size={20} className="ml-auto text-primary" />
-                  )}
                 </div>
               </div>
-              <input type="hidden" {...register("method")} />
             </section>
           </div>
 
-          {/* Summary Sidebar */}
           <div className="md:col-span-1">
-            <div className="sticky top-28 bg-white p-6 rounded-3xl shadow-lg shadow-gray-200/50 border border-gray-100">
+            <div className="sticky top-28 bg-white p-6 rounded-3xl shadow-lg border border-gray-100">
               <h3 className="font-bold text-lg mb-6">Donation Summary</h3>
-
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Type</span>
@@ -278,14 +285,16 @@ const Donate = () => {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Category</span>
+                  <span className="font-medium text-gray-900">
+                    {selectedCategory}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Amount</span>
                   <span className="font-medium text-gray-900">
                     ${selectedAmount}
                   </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Processing Fee</span>
-                  <span className="font-medium text-green-600">Covered</span>
                 </div>
                 <div className="h-px bg-gray-100 my-2"></div>
                 <div className="flex justify-between items-end">
@@ -295,11 +304,10 @@ const Donate = () => {
                   </span>
                 </div>
               </div>
-
               <button
                 onClick={handleSubmit(onSubmit)}
                 disabled={isLoading}
-                className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg shadow-primary/30 hover:bg-primary-dark transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-primary-dark transition-all flex items-center justify-center gap-2 disabled:opacity-70"
               >
                 {isLoading ? (
                   <Loader className="animate-spin" size={20} />
@@ -309,11 +317,6 @@ const Donate = () => {
                   </>
                 )}
               </button>
-
-              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
-                <Heart size={12} className="text-red-400" fill="currentColor" />{" "}
-                Secure SSL Encryption
-              </div>
             </div>
           </div>
         </div>
