@@ -838,26 +838,6 @@ const AdminDashboard = () => {
                                 </span>
                               </span>
                             </div>
-
-                            <div className="flex gap-2 mt-auto pt-4 border-t border-gray-50">
-                              <button
-                                onClick={() => handleEditClick(campaign)}
-                                className="flex-1 py-2 text-sm font-semibold text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors"
-                              >
-                                Edit Details
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleDeleteCampaign(
-                                    campaign._id || campaign.id
-                                  )
-                                }
-                                className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                                title="Delete Campaign"
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            </div>
                           </div>
                         </div>
                       ))}
@@ -894,7 +874,6 @@ const AdminDashboard = () => {
                       <th className="p-4 pl-6">Name</th>
                       <th className="p-4">Email</th>
                       <th className="p-4">Joined Date</th>
-                      <th className="p-4 pr-6 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -909,11 +888,6 @@ const AdminDashboard = () => {
                         <td className="p-4 text-gray-500">{user.email}</td>
                         <td className="p-4 text-gray-500">
                           {new Date(user.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="p-4 pr-6 text-right">
-                          <button className="text-gray-400 hover:text-red-600 transition-colors">
-                            <Trash2 size={18} />
-                          </button>
                         </td>
                       </tr>
                     ))}
