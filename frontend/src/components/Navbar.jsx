@@ -70,16 +70,12 @@ const Navbar = () => {
           </span>
         </div>
 
-        {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8">
           {[
             { name: "Home", path: "/" },
             { name: "About Us", path: "/about" },
             { name: "Campaigns", path: "/campaigns" },
-            {
-              name: "Zakat Calculator",
-              path: isLoggedIn ? "/donate" : "/login",
-            },
+            { name: "Zakat Calculator", path: "/zakat-calculator" },
           ].map((item) => (
             <Link
               key={item.name}
@@ -144,10 +140,7 @@ const Navbar = () => {
             { name: "Home", path: "/" },
             { name: "About Us", path: "/about" },
             { name: "Campaigns", path: "/campaigns" },
-            {
-              name: "Zakat Calculator",
-              path: isLoggedIn ? "/donate" : "/login",
-            },
+            { name: "Zakat Calculator", path: "/zakat-calculator" },
           ].map((item) => (
             <Link
               key={item.name}

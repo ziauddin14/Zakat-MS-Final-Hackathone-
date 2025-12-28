@@ -45,7 +45,7 @@ const Hero = () => {
                     Give Zakat Now <ArrowRight size={20} />
                   </motion.button>
                 </Link>
-                <Link to="/login">
+                <Link to="/zakat-calculator">
                   <motion.button
                     whileHover={{
                       scale: 1.05,

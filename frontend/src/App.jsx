@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import Campaigns from "./pages/Campaigns";
 import Donate from "./pages/Donate";
 import AdminDashboard from "./pages/AdminDashboard";
+import ZakatCalculator from "./pages/ZakatCalculator";
 
 // Layout component to conditionally render Navbar and Footer
 const Layout = ({ children }) => {
@@ -62,6 +63,7 @@ const AnimatedRoutes = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/campaigns" element={<Campaigns />} />
         <Route path="/donate" element={<Donate />} />
+        <Route path="/zakat-calculator" element={<ZakatCalculator />} />
         <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </AnimatePresence>
