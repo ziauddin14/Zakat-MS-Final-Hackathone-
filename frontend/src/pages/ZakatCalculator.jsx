@@ -48,18 +48,12 @@ const ZakatCalculator = () => {
     const fetchRates = async () => {
       try {
         setRatesLoading(true);
-        
-        // NOTE: International API rates don't match Pakistan local market
-        // Using Pakistan local market rates (Sarafa) as default
-        // TODO: Integrate Pakistan-specific API (forex.com.pk, goldpricepakistan.com)
-        
-        // International API (Currently disabled)
         const response = await fetch("https://www.goldapi.io/api/XAU/PKR", {
           headers: {
             "x-access-token": "goldapi-jm2qrsmjp7dz1i-io",
           },
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           const goldPerGram = data.price / 31.1035;
@@ -68,18 +62,14 @@ const ZakatCalculator = () => {
           setSilverRate(silverPerGram);
           setRatesError(false);
         } else {
-          throw new Error('API failed');
+          throw new Error("API failed");
         }
-        
-        
-        // Using Pakistan local market rates (Sarafa)
-        // Update these rates daily from: forex.com.pk or local sarafa market
+
         setGoldRate(CONSTANTS.FALLBACK_GOLD_RATE / CONSTANTS.TOLA_TO_GRAMS);
         setSilverRate(CONSTANTS.FALLBACK_SILVER_RATE / CONSTANTS.TOLA_TO_GRAMS);
         setRatesError(false);
-        
       } catch (error) {
-        console.log('Using Pakistan local market rates:', error);
+        console.log("Using Pakistan local market rates:", error);
         setGoldRate(CONSTANTS.FALLBACK_GOLD_RATE / CONSTANTS.TOLA_TO_GRAMS);
         setSilverRate(CONSTANTS.FALLBACK_SILVER_RATE / CONSTANTS.TOLA_TO_GRAMS);
         setRatesError(false);

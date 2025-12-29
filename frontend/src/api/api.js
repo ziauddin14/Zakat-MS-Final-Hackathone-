@@ -1,7 +1,9 @@
 // src/api/api.js
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// Default to Live Backend. For local dev, set VITE_API_URL=http://localhost:5000/api in .env
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://zakat-ms-backend.onrender.com/api";
 
 const getHeaders = () => {
   // One-time cleanup for any "undefined" strings accidental stored
