@@ -79,9 +79,9 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-8">
           {[
             { name: "Home", path: "/" },
-            { name: "About Us", path: "/about" },
             { name: "Campaigns", path: "/campaigns" },
             { name: "Zakat Calculator", path: "/zakat-calculator" },
+            { name: "About Us", path: "/about" },
           ].map((item) => (
             <Link
               key={item.name}
@@ -144,9 +144,9 @@ const Navbar = () => {
         >
           {[
             { name: "Home", path: "/" },
-            { name: "About Us", path: "/about" },
             { name: "Campaigns", path: "/campaigns" },
             { name: "Zakat Calculator", path: "/zakat-calculator" },
+            { name: "About Us", path: "/about" },
           ].map((item) => (
             <Link
               key={item.name}
