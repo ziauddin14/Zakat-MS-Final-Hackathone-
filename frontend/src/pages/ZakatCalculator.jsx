@@ -473,8 +473,8 @@ const ZakatCalculator = () => {
               >
                 <p className="text-xs text-blue-800">
                   <strong>Note:</strong> This calculation is based on Hanafi
-                  fiqh (Barelvi). For complex cases or specific questions,
-                  please consult a qualified Mufti.
+                  fiqh. For complex cases or specific questions, please consult
+                  a qualified Mufti.
                 </p>
               </motion.div>
             </div>
