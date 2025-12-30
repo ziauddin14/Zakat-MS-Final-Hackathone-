@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Menu, X, Heart } from "lucide-react";
+import DonateIcon from "./icons/DonateIcon";
+import zakatLogo from "../assets/zakat-logo-processed.png";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -63,7 +65,11 @@ const Navbar = () => {
         {/* Logo */}
         <div className="flex items-center gap-2 cursor-pointer">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white">
-            <Heart size={20} fill="currentColor" />
+            <img
+              src={zakatLogo}
+              alt="Logo"
+              className="w-6 h-6 object-contain"
+            />
           </div>
           <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-dark to-primary">
             ZakatFlow
@@ -115,7 +121,7 @@ const Navbar = () => {
               className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-full font-semibold shadow-lg shadow-primary/30 transition-all flex items-center gap-2"
             >
               <span>Donate Now</span>
-              <Heart size={16} fill="currentColor" />
+              <DonateIcon size={26} />
             </motion.button>
           </Link>
         </div>

@@ -21,7 +21,7 @@ const Hero = () => {
               transition={{ duration: 0.6 }}
             >
               <span className="inline-block py-1 px-3 rounded-full bg-accent/10 text-accent-hover font-medium text-sm mb-6 border border-accent/20">
-                ✨ Trusted by 10,000+ Donors
+                Trusted by 10,000+ Donors
               </span>
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight text-gray-900 mb-6">
                 Purify Your Wealth, <br />
