@@ -1597,10 +1597,11 @@ const ZakatCalculator = () => {
             </div>
           </div>
 
-          <p className="mt-3 text-[11px] text-gray-500 leading-relaxed">
-            Tip: Karachi market/retail rates paste karo (per tola). Agar OFF
-            karo to calculator Live (Spot) pe chalay ga (ya fallback if API
-            fails).
+          <p className="mt-4 text-sm font-medium text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200 leading-relaxed">
+            Please manually check today's Karachi market/retail metal rates on
+            Google and enter them here (per tola). If you toggle this OFF, the
+            calculator will rely on Live (Spot) rates, which may result in an
+            inaccurate Zakat calculation.
           </p>
         </div>
       </motion.div>
