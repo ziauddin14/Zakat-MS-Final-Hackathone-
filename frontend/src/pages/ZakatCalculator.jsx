@@ -1477,40 +1477,22 @@ const ZakatCalculator = () => {
               Gold ({goldKarat}K) + Silver — per gram & per tola
             </p>
           </div>
-          <div className="space-y-4">
-            <InputField
-              icon={Coins}
-              label="Gold"
-              inputRef={goldAmountRef}
-              placeholder="0"
-              unit={true}
-              unitRef={goldUnitRef}
-              defaultUnit="tola"
-              rightSlot={
-                <select
-                  value={goldKarat}
-                  onChange={(e) => setGoldKarat(parseInt(e.target.value, 10))}
-                  className="text-xs font-semibold px-3 py-2 bg-white border-2 border-gray-100 rounded-xl outline-none focus:border-primary transition-all"
-                  title="Gold purity"
-                >
-                  <option value={24}>24K</option>
-                  <option value={22}>22K</option>
-                  <option value={20}>20K</option>
-                </select>
-              }
-            />
 
-            <InputField
-              icon={Coins}
-              label="Silver"
-              inputRef={silverAmountRef}
-              placeholder="0"
-              unit={true}
-              unitRef={silverUnitRef}
-              defaultUnit="tola"
-            />
-          </div>
           <div className="flex items-center gap-2">
+            {/* Moved Gold Karat Selector Here */}
+            <select
+              value={goldKarat}
+              onChange={(e) => setGoldKarat(parseInt(e.target.value, 10))}
+              className="text-xs font-semibold px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-primary text-gray-700 cursor-pointer hover:bg-gray-50 transition-all"
+              title="Select Gold Karat for Calculation"
+            >
+              <option value={24}>Gold 24K</option>
+              <option value={22}>Gold 22K</option>
+              <option value={21}>Gold 21K</option>
+              <option value={20}>Gold 20K</option>
+              <option value={18}>Gold 18K</option>
+            </select>
+
             <span
               className={`text-xs font-semibold px-3 py-1 rounded-full border ${badgeClass}`}
             >
@@ -1709,6 +1691,28 @@ const ZakatCalculator = () => {
                 </div>
                 Precious Metals
               </h3>
+
+              <div className="space-y-4">
+                <InputField
+                  icon={Coins}
+                  label="Gold"
+                  inputRef={goldAmountRef}
+                  placeholder="0"
+                  unit={true}
+                  unitRef={goldUnitRef}
+                  defaultUnit="tola"
+                />
+
+                <InputField
+                  icon={Coins}
+                  label="Silver"
+                  inputRef={silverAmountRef}
+                  placeholder="0"
+                  unit={true}
+                  unitRef={silverUnitRef}
+                  defaultUnit="tola"
+                />
+              </div>
             </motion.div>
 
             {/* Business & Receivables */}
