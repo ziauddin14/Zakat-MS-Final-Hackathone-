@@ -1558,13 +1558,6 @@ const ZakatCalculator = () => {
               />
             </div>
           </div>
-
-          <div className="mt-5 pt-4 border-t border-gray-50 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
-            <span>Current Calculation Mode</span>
-            <span className={`px-2 py-0.5 rounded-md border ${badgeClass}`}>
-              {badge}
-            </span>
-          </div>
         </motion.div>
       </div>
     );
