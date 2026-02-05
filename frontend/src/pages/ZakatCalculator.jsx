@@ -753,13 +753,13 @@ const ZakatCalculator = () => {
                         <AlertCircle size={24} className="text-orange-600" />
                       )}
                       <h4 className="font-bold text-lg">
-                        {result.nisabReached ? "Nisab Reached" : "Below Nisab"}
+                        {result.nisabReached ? "Limit Reached" : "Below Limit"}
                       </h4>
                     </div>
                     <p className="text-sm text-gray-600">
                       {result.nisabReached
-                        ? "Your wealth has reached the Nisab threshold. Zakat is obligatory."
-                        : "Your wealth is below the Nisab threshold. Zakat is not obligatory at this time."}
+                        ? "Your wealth has reached the Zakat Minimum Limit. Zakat is obligatory."
+                        : "Your wealth is below the Zakat Minimum Limit. Zakat is not obligatory at this time."}
                     </p>
 
                     <div className="mt-4 text-xs text-gray-600 flex items-center justify-between">
@@ -801,7 +801,9 @@ const ZakatCalculator = () => {
                       </div>
 
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Nisab Threshold</span>
+                        <span className="text-gray-600">
+                          Zakat Minimum Limit
+                        </span>
                         <span className="font-semibold text-primary">
                           {formatPKR(result.nisabValue)}
                         </span>
