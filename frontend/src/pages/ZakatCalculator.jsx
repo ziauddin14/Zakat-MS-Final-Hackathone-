@@ -1471,10 +1471,8 @@ const ZakatCalculator = () => {
         >
           <AlertCircle size={20} className="text-amber-600 shrink-0 mt-0.5" />
           <p>
-            <strong>Local Market Instructions:</strong> Please manually check
-            today's Karachi market/retail metal rates (per tola) and enter them
-            below. If you toggle this OFF, the calculator will use Live Spot
-            rates which may differ from your local market.
+            <strong>Instruction:</strong> Please check manually current local
+            market rates of Gold/Silver/Diamond and enter below.
           </p>
         </motion.div>
 
