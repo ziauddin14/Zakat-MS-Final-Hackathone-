@@ -1462,116 +1462,64 @@ const ZakatCalculator = () => {
         : "bg-green-50 text-green-700 border-green-200";
 
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100"
-      >
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div>
-            <h4 className="font-bold text-gray-900 flex items-center gap-2">
-              <Coins size={18} className="text-primary" />
-              Rates (Used in Calculation)
-            </h4>
-            <p className="text-xs text-gray-500 mt-1">
-              Gold ({goldKarat}K) + Silver — per gram & per tola
-            </p>
-          </div>
+      <div className="space-y-4">
+        {/* Instructions at the top as requested */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-sm font-medium text-amber-800 bg-amber-50 p-4 rounded-2xl border border-amber-200 leading-relaxed shadow-sm flex gap-3"
+        >
+          <AlertCircle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+          <p>
+            <strong>Local Market Instructions:</strong> Please manually check
+            today's Karachi market/retail metal rates (per tola) and enter them
+            below. If you toggle this OFF, the calculator will use Live Spot
+            rates which may differ from your local market.
+          </p>
+        </motion.div>
 
-          <div className="flex items-center gap-2">
-            {/* Moved Gold Karat Selector Here */}
-            <select
-              value={goldKarat}
-              onChange={(e) => setGoldKarat(parseInt(e.target.value, 10))}
-              className="text-xs font-semibold px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-primary text-gray-700 cursor-pointer hover:bg-gray-50 transition-all"
-              title="Select Gold Karat for Calculation"
-            >
-              <option value={24}>Gold 24K</option>
-              <option value={22}>Gold 22K</option>
-              <option value={21}>Gold 21K</option>
-              <option value={20}>Gold 20K</option>
-              <option value={18}>Gold 18K</option>
-            </select>
-
-            <span
-              className={`text-xs font-semibold px-3 py-1 rounded-full border ${badgeClass}`}
-            >
-              {badge}
-            </span>
-
-            <button
-              type="button"
-              onClick={fetchRates}
-              className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-all"
-              title="Refresh live rates"
-            >
-              <RefreshCw size={16} className="text-gray-700" />
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
-            <div className="text-xs text-gray-500 mb-1">
-              Gold ({goldKarat}K)
-            </div>
-            <div className="text-sm font-semibold text-gray-900">
-              {formatPKR2(currentGoldAppliedPerGram)} / gram
-            </div>
-            <div className="text-sm font-semibold text-gray-900">
-              {formatPKR2(toTola(currentGoldAppliedPerGram))} / tola
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
-            <div className="text-xs text-gray-500 mb-1">Silver</div>
-            <div className="text-sm font-semibold text-gray-900">
-              {formatPKR2(currentSilverPerGram)} / gram
-            </div>
-            <div className="text-sm font-semibold text-gray-900">
-              {formatPKR2(toTola(currentSilverPerGram))} / tola
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-xs text-gray-600">
-          <span>
-            Nisab (Silver):{" "}
-            <span className="font-semibold text-primary">
-              {formatPKR2(CONSTANTS.SILVER_NISAB_GRAMS * currentSilverPerGram)}
-            </span>
-          </span>
-          <span>
-            {ratesUpdatedAt
-              ? `Updated: ${ratesUpdatedAt.toLocaleString()}`
-              : "—"}
-          </span>
-        </div>
-
-        {/* Manual / Market override */}
-        <div className="mt-5 p-4 rounded-2xl border border-gray-100 bg-white">
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-              <SlidersHorizontal size={16} className="text-primary" />
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100"
+        >
+          <div className="flex items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-2 text-sm font-bold text-gray-900">
+              <SlidersHorizontal size={18} className="text-primary" />
               Market Rates Override
             </div>
 
-            <button
-              type="button"
-              onClick={() => setUseManualRates((v) => !v)}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                useManualRates
-                  ? "bg-primary/10 text-primary border-primary/20"
-                  : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-              }`}
-            >
-              {useManualRates ? "ON" : "OFF"}
-            </button>
+            <div className="flex items-center gap-2">
+              <select
+                value={goldKarat}
+                onChange={(e) => setGoldKarat(parseInt(e.target.value, 10))}
+                className="text-xs font-semibold px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-primary text-gray-700 cursor-pointer hover:bg-gray-50 transition-all"
+                title="Select Gold Karat"
+              >
+                <option value={24}>24K</option>
+                <option value={22}>22K</option>
+                <option value={21}>21K</option>
+                <option value={20}>20K</option>
+                <option value={18}>18K</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={() => setUseManualRates((v) => !v)}
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                  useManualRates
+                    ? "bg-primary text-white border-primary shadow-md"
+                    : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+                }`}
+              >
+                {useManualRates ? "ENABLED" : "DISABLED"}
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 ml-1">
                 Gold ({goldKarat}K) — PKR per tola
               </label>
               <input
@@ -1580,7 +1528,7 @@ const ZakatCalculator = () => {
                 step="any"
                 value={manualGoldPerTola}
                 onChange={(e) => setManualGoldPerTola(e.target.value)}
-                placeholder="e.g. 502333"
+                placeholder="e.g. 295000"
                 disabled={!useManualRates}
                 className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
                   useManualRates
@@ -1591,7 +1539,7 @@ const ZakatCalculator = () => {
             </div>
 
             <div>
-              <label className="block text-xs text-gray-600 mb-1">
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5 ml-1">
                 Silver — PKR per tola
               </label>
               <input
@@ -1600,7 +1548,7 @@ const ZakatCalculator = () => {
                 step="any"
                 value={manualSilverPerTola}
                 onChange={(e) => setManualSilverPerTola(e.target.value)}
-                placeholder="(optional)"
+                placeholder="e.g. 3500"
                 disabled={!useManualRates}
                 className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
                   useManualRates
@@ -1611,14 +1559,14 @@ const ZakatCalculator = () => {
             </div>
           </div>
 
-          <p className="mt-4 text-sm font-medium text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200 leading-relaxed">
-            Please manually check today's Karachi market/retail metal rates on
-            Google and enter them here (per tola). If you toggle this OFF, the
-            calculator will rely on Live (Spot) rates, which may result in an
-            inaccurate Zakat calculation.
-          </p>
-        </div>
-      </motion.div>
+          <div className="mt-5 pt-4 border-t border-gray-50 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
+            <span>Current Calculation Mode</span>
+            <span className={`px-2 py-0.5 rounded-md border ${badgeClass}`}>
+              {badge}
+            </span>
+          </div>
+        </motion.div>
+      </div>
     );
   };
 
