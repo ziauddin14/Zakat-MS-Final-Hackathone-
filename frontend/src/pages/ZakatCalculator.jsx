@@ -154,10 +154,22 @@ const RatesBox = ({
         className="text-sm font-medium text-amber-800 bg-amber-50 p-4 rounded-2xl border border-amber-200 leading-relaxed shadow-sm flex gap-3"
       >
         <AlertCircle size={20} className="text-amber-600 shrink-0 mt-0.5" />
-        <p>
-          <strong>Instruction:</strong> Please check manually current local
-          market rates of Gold/Silver/Diamond and enter below (if any).
-        </p>
+        <div className="space-y-2">
+          <strong className="block mb-1 text-amber-900">Instructions:</strong>
+          <div className="space-y-1.5">
+            <p className="flex gap-2">
+              <span className="font-bold text-amber-700 shrink-0">(a).</span>
+              <span>
+                Firstly, check manually current local market rates of Gold /
+                Silver / Diamond through Google.
+              </span>
+            </p>
+            <p className="flex gap-2">
+              <span className="font-bold text-amber-700 shrink-0">(b).</span>
+              <span>Enter amount below (if any).</span>
+            </p>
+          </div>
+        </div>
       </motion.div>
 
       <motion.div
