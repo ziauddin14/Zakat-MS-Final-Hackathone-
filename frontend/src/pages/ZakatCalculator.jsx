@@ -15,6 +15,7 @@ import {
   RefreshCw,
   SlidersHorizontal,
   Gem,
+  PawPrint,
 } from "lucide-react";
 
 // Configurable constants (based on Hanafi fiqh)
@@ -631,7 +632,7 @@ const ZakatCalculator = () => {
                 />
 
                 <InputField
-                  icon={TrendingUp}
+                  icon={PawPrint}
                   label="Animals for Commercial Sale (Market Value)"
                   inputRef={animalsForSaleRef}
                   placeholder="0"
