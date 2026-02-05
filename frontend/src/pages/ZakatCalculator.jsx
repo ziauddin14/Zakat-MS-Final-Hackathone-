@@ -24,6 +24,10 @@ const CONSTANTS = {
   ZAKAT_PERCENTAGE: 2.5, // 2.5% (fixed)
   TOLA_TO_GRAMS: 11.664, // 1 Tola = 11.664 grams (fixed)
 
+  // ✅ Hanafi Nisab Thresholds in Tola
+  GOLD_NISAB_TOLA: 7.5,
+  SILVER_NISAB_TOLA: 52.5,
+
   // ✅ New: Masha support
   MASHA_PER_TOLA: 12, // 1 Tola = 12 Masha
 
@@ -446,15 +450,51 @@ const ZakatCalculator = () => {
       providentFund;
     const netZakatable = totalAssets - liabilities;
 
-    const nisabValue = CONSTANTS.SILVER_NISAB_GRAMS * currentSilverPerGram;
+    const goldRatePerTola = currentGoldAppliedPerGram * CONSTANTS.TOLA_TO_GRAMS;
+    const silverRatePerTola = currentSilverPerGram * CONSTANTS.TOLA_TO_GRAMS;
 
-    const zakatPayable =
-      netZakatable >= nisabValue
-        ? (netZakatable * CONSTANTS.ZAKAT_PERCENTAGE) / 100
-        : 0;
+    const goldNisabValue = CONSTANTS.GOLD_NISAB_TOLA * goldRatePerTola;
+    const silverNisabValue = CONSTANTS.SILVER_NISAB_TOLA * silverRatePerTola;
+
+    // Rule: MIN(Gold Nisab, Silver Nisab) for mixed wealth
+    const applicableNisabValue = Math.min(goldNisabValue, silverNisabValue);
+
+    // --- Hanafi Refined Logic ---
+    // 1. Check if wealth is "Pure" (only gold or only silver, no other assets)
+    const hasOtherAssets =
+      cash +
+        bank +
+        stock +
+        receivables +
+        diamondValue +
+        animalsForSale +
+        rawMaterials +
+        providentFund >
+      0;
+    const hasGold = goldInGrams > 0;
+    const hasSilver = silverInGrams > 0;
+
+    let nisabReached = false;
+
+    if (!hasOtherAssets && hasGold && !hasSilver) {
+      // ONLY Gold Case
+      const goldTolaWeight = goldInGrams / CONSTANTS.TOLA_TO_GRAMS;
+      nisabReached = goldTolaWeight >= CONSTANTS.GOLD_NISAB_TOLA;
+    } else if (!hasOtherAssets && !hasGold && hasSilver) {
+      // ONLY Silver Case
+      const silverTolaWeight = silverInGrams / CONSTANTS.TOLA_TO_GRAMS;
+      nisabReached = silverTolaWeight >= CONSTANTS.SILVER_NISAB_TOLA;
+    } else {
+      // Mixed Wealth or Combined Metals
+      nisabReached = netZakatable >= applicableNisabValue;
+    }
+
+    const zakatPayable = nisabReached
+      ? (netZakatable * CONSTANTS.ZAKAT_PERCENTAGE) / 100
+      : 0;
 
     const ratesSource = useManualRates
-      ? "Market (Manual)"
+      ? "User Entered"
       : ratesError
         ? "Fallback"
         : "Live (Spot)";
@@ -463,8 +503,10 @@ const ZakatCalculator = () => {
       totalAssets,
       liabilities,
       netZakatable,
-      nisabValue,
-      nisabReached: netZakatable >= nisabValue,
+      goldNisabValue,
+      silverNisabValue,
+      nisabReached,
+      applicableNisabValue,
       zakatPayable,
 
       goldKarat,
@@ -758,8 +800,8 @@ const ZakatCalculator = () => {
                     </div>
                     <p className="text-sm text-gray-600">
                       {result.nisabReached
-                        ? "Your wealth has reached the Zakat Minimum Limit. Zakat is obligatory."
-                        : "Your wealth is below the Zakat Minimum Limit. Zakat is not obligatory at this time."}
+                        ? "Your total wealth has reached the minimum limit. Zakat is obligatory."
+                        : "Your total wealth is below the minimum limit required for Zakat. Zakat is not obligatory at this time."}
                     </p>
 
                     <div className="mt-4 text-xs text-gray-600 flex items-center justify-between">
@@ -794,19 +836,34 @@ const ZakatCalculator = () => {
                       <div className="h-px bg-gray-200" />
 
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Net Zakatable</span>
+                        <span className="text-gray-600">
+                          Net Zakatable balance
+                        </span>
                         <span className="font-bold">
                           {formatPKR(result.netZakatable)}
                         </span>
                       </div>
 
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">
-                          Zakat Minimum Limit
-                        </span>
-                        <span className="font-semibold text-primary">
-                          {formatPKR(result.nisabValue)}
-                        </span>
+                      <div className="flex flex-col gap-1 pt-1">
+                        <div className="flex justify-between text-[11px] text-gray-500 italic">
+                          <span>Gold Limit (7.5 Tola)</span>
+                          <span>{formatPKR(result.goldNisabValue)}</span>
+                        </div>
+                        <div className="flex justify-between text-[11px] text-gray-500 italic">
+                          <span>Silver Limit (52.5 Tola)</span>
+                          <span>{formatPKR(result.silverNisabValue)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm mt-1">
+                          <span className="text-gray-900 font-medium">
+                            Applied Minimum Limit <br />
+                            <span className="text-[10px] text-gray-400 font-normal">
+                              (Gold 7.5 Tola or Silver 52.5 Tola)
+                            </span>
+                          </span>
+                          <span className="font-semibold text-primary">
+                            {formatPKR(result.applicableNisabValue)}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="h-px bg-gray-100" />
