@@ -1163,6 +1163,7 @@ import {
   ArrowRight,
   RefreshCw,
   SlidersHorizontal,
+  Gem,
 } from "lucide-react";
 
 // Configurable constants (based on Hanafi fiqh)
@@ -1218,6 +1219,7 @@ const ZakatCalculator = () => {
   const silverUnitRef = useRef(null);
   const businessStockRef = useRef(null);
   const receivablesRef = useRef(null);
+  const diamondRef = useRef(null);
   const liabilitiesRef = useRef(null);
 
   const TROY_OUNCE_GRAMS = 31.1034768;
@@ -1345,8 +1347,18 @@ const ZakatCalculator = () => {
       parseFloat(liabilitiesRef.current?.value) || 0,
     );
 
+    const diamondValue = clampNonNegative(
+      parseFloat(diamondRef.current?.value) || 0,
+    );
+
     const totalAssets =
-      cash + bank + goldValue + silverValue + stock + receivables;
+      cash +
+      bank +
+      goldValue +
+      silverValue +
+      stock +
+      receivables +
+      diamondValue;
     const netZakatable = totalAssets - liabilities;
 
     const nisabValue = CONSTANTS.SILVER_NISAB_GRAMS * currentSilverPerGram;
@@ -1392,6 +1404,7 @@ const ZakatCalculator = () => {
     if (silverUnitRef.current) silverUnitRef.current.value = "tola";
     if (businessStockRef.current) businessStockRef.current.value = "";
     if (receivablesRef.current) receivablesRef.current.value = "";
+    if (diamondRef.current) diamondRef.current.value = "";
     if (liabilitiesRef.current) liabilitiesRef.current.value = "";
 
     setShowResult(false);
@@ -1678,6 +1691,12 @@ const ZakatCalculator = () => {
                   icon={FileText}
                   label="Money Expected to be Received (Total Value)"
                   inputRef={receivablesRef}
+                  placeholder="0"
+                />
+                <InputField
+                  icon={Gem}
+                  label="Diamond (Include amount in PKR)"
+                  inputRef={diamondRef}
                   placeholder="0"
                 />
               </div>
