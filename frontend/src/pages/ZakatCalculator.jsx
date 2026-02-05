@@ -619,13 +619,13 @@ const ZakatCalculator = () => {
                 />
                 <InputField
                   icon={FileText}
-                  label="Money Expected to be Received (Total Value)"
+                  label="Money Expected to be Received (Total Amount)"
                   inputRef={receivablesRef}
                   placeholder="0"
                 />
                 <InputField
                   icon={Gem}
-                  label="Diamond (Include amount in PKR)"
+                  label="Diamond (Amount in PKR)"
                   inputRef={diamondRef}
                   placeholder="0"
                 />
@@ -646,7 +646,7 @@ const ZakatCalculator = () => {
 
                 <InputField
                   icon={Wallet}
-                  label="Provident Fund / GP Fund (Total Value)"
+                  label="Provident Fund / GP Fund (Total Amount)"
                   inputRef={providentFundRef}
                   placeholder="0"
                 />
@@ -669,7 +669,7 @@ const ZakatCalculator = () => {
               <div className="space-y-4">
                 <InputField
                   icon={CreditCard}
-                  label="Short-term Debts & Bills (Total Value)"
+                  label="Debts & all types of bills (Total Value)"
                   inputRef={liabilitiesRef}
                   placeholder="0"
                 />
