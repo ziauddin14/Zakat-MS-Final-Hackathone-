@@ -614,7 +614,7 @@ const ZakatCalculator = () => {
               <div className="space-y-4">
                 <InputField
                   icon={Building2}
-                  label="Total Value : (Business Stock / Plots / Properties / Vehicles / Other Assets)"
+                  label="Total Value : (Business Stock / Plots / Properties / Commercial Vehicles / Other Assets)"
                   inputRef={businessStockRef}
                   placeholder="0"
                 />
