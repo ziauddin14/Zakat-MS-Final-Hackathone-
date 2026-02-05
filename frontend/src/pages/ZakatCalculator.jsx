@@ -47,6 +47,186 @@ const mashaToGrams = (masha) =>
 
 const clampNonNegative = (n) => (n < 0 ? 0 : n);
 
+// ---------- UI components ----------
+const InputField = ({
+  icon: Icon,
+  label,
+  inputRef,
+  placeholder,
+  unit,
+  unitRef,
+  rightSlot,
+  defaultUnit = "tola",
+
+  // ✅ New optional masha
+  showMasha = false,
+  mashaRef,
+  mashaPlaceholder = "0",
+}) => (
+  <motion.div
+    initial={{ opacity: 0, y: 18 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="space-y-2"
+  >
+    <label className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700">
+      <span className="flex items-center gap-2">
+        <Icon size={16} className="text-primary" />
+        {label}
+      </span>
+      {rightSlot ? <span>{rightSlot}</span> : null}
+    </label>
+
+    <div className="flex gap-2">
+      <input
+        ref={inputRef}
+        type="number"
+        placeholder={placeholder}
+        min="0"
+        step="any"
+        defaultValue=""
+        className="flex-1 px-4 py-3 bg-white border-2 border-gray-100 rounded-xl outline-none focus:border-primary transition-all"
+      />
+
+      {showMasha && (
+        <div className="w-28">
+          <input
+            ref={mashaRef}
+            type="number"
+            placeholder={mashaPlaceholder}
+            min="0"
+            step="any"
+            defaultValue=""
+            className="w-full px-3 py-3 bg-white border-2 border-gray-100 rounded-xl outline-none focus:border-primary transition-all"
+            title="Masha"
+          />
+          <div className="text-[10px] text-gray-500 mt-1 text-center">
+            Masha
+          </div>
+        </div>
+      )}
+
+      {unit && (
+        <select
+          ref={unitRef}
+          defaultValue={defaultUnit}
+          className="px-4 py-3 bg-white border-2 border-gray-100 rounded-xl outline-none focus:border-primary transition-all"
+        >
+          <option value="tola">Tola</option>
+          <option value="grams">Grams</option>
+        </select>
+      )}
+    </div>
+  </motion.div>
+);
+
+const RatesBox = ({
+  useManualRates,
+  ratesLoading,
+  ratesError,
+  goldKarat,
+  setGoldKarat,
+  manualGoldPerTola,
+  setManualGoldPerTola,
+  manualSilverPerTola,
+  setManualSilverPerTola,
+}) => {
+  const badge = useManualRates
+    ? "Market"
+    : ratesLoading
+      ? "Loading…"
+      : ratesError
+        ? "Fallback"
+        : "Live";
+
+  const badgeClass = useManualRates
+    ? "bg-blue-50 text-blue-700 border-blue-200"
+    : ratesError
+      ? "bg-orange-50 text-orange-700 border-orange-200"
+      : "bg-green-50 text-green-700 border-green-200";
+
+  return (
+    <div className="space-y-4">
+      {/* Instructions at the top as requested */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-sm font-medium text-amber-800 bg-amber-50 p-4 rounded-2xl border border-amber-200 leading-relaxed shadow-sm flex gap-3"
+      >
+        <AlertCircle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+        <p>
+          <strong>Instruction:</strong> Please check manually current local
+          market rates of Gold/Silver/Diamond and enter below (if any).
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100"
+      >
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-2">
+            <select
+              value={goldKarat}
+              onChange={(e) => setGoldKarat(parseInt(e.target.value, 10))}
+              className="text-xs font-semibold px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-primary text-gray-700 cursor-pointer hover:bg-gray-50 transition-all"
+              title="Select Gold Karat"
+            >
+              <option value={24}>24K</option>
+              <option value={22}>22K</option>
+              <option value={21}>21K</option>
+              <option value={20}>20K</option>
+              <option value={18}>18K</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5 ml-1">
+              Gold ({goldKarat}K) — PKR per tola
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              value={manualGoldPerTola}
+              onChange={(e) => setManualGoldPerTola(e.target.value)}
+              placeholder="e.g. 295000"
+              disabled={!useManualRates}
+              className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
+                useManualRates
+                  ? "bg-white border-gray-100 focus:border-primary"
+                  : "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5 ml-1">
+              Silver — PKR per tola
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              value={manualSilverPerTola}
+              onChange={(e) => setManualSilverPerTola(e.target.value)}
+              placeholder="e.g. 3500"
+              disabled={!useManualRates}
+              className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
+                useManualRates
+                  ? "bg-white border-gray-100 focus:border-primary"
+                  : "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            />
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 // ---------- Component ----------
 const ZakatCalculator = () => {
   const [result, setResult] = useState(null);
@@ -310,176 +490,6 @@ const ZakatCalculator = () => {
     setResult(null);
   };
 
-  // ---------- UI components ----------
-  const InputField = ({
-    icon: Icon,
-    label,
-    inputRef,
-    placeholder,
-    unit,
-    unitRef,
-    rightSlot,
-    defaultUnit = "tola",
-
-    // ✅ New optional masha
-    showMasha = false,
-    mashaRef,
-    mashaPlaceholder = "0",
-  }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-2"
-    >
-      <label className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700">
-        <span className="flex items-center gap-2">
-          <Icon size={16} className="text-primary" />
-          {label}
-        </span>
-        {rightSlot ? <span>{rightSlot}</span> : null}
-      </label>
-
-      <div className="flex gap-2">
-        <input
-          ref={inputRef}
-          type="number"
-          placeholder={placeholder}
-          min="0"
-          step="any"
-          defaultValue=""
-          className="flex-1 px-4 py-3 bg-white border-2 border-gray-100 rounded-xl outline-none focus:border-primary transition-all"
-        />
-
-        {showMasha && (
-          <div className="w-28">
-            <input
-              ref={mashaRef}
-              type="number"
-              placeholder={mashaPlaceholder}
-              min="0"
-              step="any"
-              defaultValue=""
-              className="w-full px-3 py-3 bg-white border-2 border-gray-100 rounded-xl outline-none focus:border-primary transition-all"
-              title="Masha"
-            />
-            <div className="text-[10px] text-gray-500 mt-1 text-center">
-              Masha
-            </div>
-          </div>
-        )}
-
-        {unit && (
-          <select
-            ref={unitRef}
-            defaultValue={defaultUnit}
-            className="px-4 py-3 bg-white border-2 border-gray-100 rounded-xl outline-none focus:border-primary transition-all"
-          >
-            <option value="tola">Tola</option>
-            <option value="grams">Grams</option>
-          </select>
-        )}
-      </div>
-    </motion.div>
-  );
-
-  const RatesBox = () => {
-    const badge = useManualRates
-      ? "Market"
-      : ratesLoading
-        ? "Loading…"
-        : ratesError
-          ? "Fallback"
-          : "Live";
-
-    const badgeClass = useManualRates
-      ? "bg-blue-50 text-blue-700 border-blue-200"
-      : ratesError
-        ? "bg-orange-50 text-orange-700 border-orange-200"
-        : "bg-green-50 text-green-700 border-green-200";
-
-    return (
-      <div className="space-y-4">
-        {/* Instructions at the top as requested */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-sm font-medium text-amber-800 bg-amber-50 p-4 rounded-2xl border border-amber-200 leading-relaxed shadow-sm flex gap-3"
-        >
-          <AlertCircle size={20} className="text-amber-600 shrink-0 mt-0.5" />
-          <p>
-            <strong>Instruction:</strong> Please check manually current local
-            market rates of Gold/Silver/Diamond and enter below (if any).
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100"
-        >
-          <div className="flex items-center justify-between gap-3 mb-6">
-            <div className="flex items-center gap-2">
-              <select
-                value={goldKarat}
-                onChange={(e) => setGoldKarat(parseInt(e.target.value, 10))}
-                className="text-xs font-semibold px-3 py-1.5 bg-white border border-gray-200 rounded-lg outline-none focus:border-primary text-gray-700 cursor-pointer hover:bg-gray-50 transition-all"
-                title="Select Gold Karat"
-              >
-                <option value={24}>24K</option>
-                <option value={22}>22K</option>
-                <option value={21}>21K</option>
-                <option value={20}>20K</option>
-                <option value={18}>18K</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5 ml-1">
-                Gold ({goldKarat}K) — PKR per tola
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                value={manualGoldPerTola}
-                onChange={(e) => setManualGoldPerTola(e.target.value)}
-                placeholder="e.g. 295000"
-                disabled={!useManualRates}
-                className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
-                  useManualRates
-                    ? "bg-white border-gray-100 focus:border-primary"
-                    : "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5 ml-1">
-                Silver — PKR per tola
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                value={manualSilverPerTola}
-                onChange={(e) => setManualSilverPerTola(e.target.value)}
-                placeholder="e.g. 3500"
-                disabled={!useManualRates}
-                className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition-all ${
-                  useManualRates
-                    ? "bg-white border-gray-100 focus:border-primary"
-                    : "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
-              />
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 pt-28 pb-20 px-4 sm:px-6">
       <div className="max-w-5xl mx-auto">
@@ -506,7 +516,17 @@ const ZakatCalculator = () => {
           {/* Form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Rates Box */}
-            <RatesBox />
+            <RatesBox
+              useManualRates={useManualRates}
+              ratesLoading={ratesLoading}
+              ratesError={ratesError}
+              goldKarat={goldKarat}
+              setGoldKarat={setGoldKarat}
+              manualGoldPerTola={manualGoldPerTola}
+              setManualGoldPerTola={setManualGoldPerTola}
+              manualSilverPerTola={manualSilverPerTola}
+              setManualSilverPerTola={setManualSilverPerTola}
+            />
 
             {/* Liquid Assets */}
             <motion.div
