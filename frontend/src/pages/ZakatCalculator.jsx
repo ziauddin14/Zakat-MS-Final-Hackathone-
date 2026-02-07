@@ -479,11 +479,17 @@ const ZakatCalculator = () => {
     if (!hasOtherAssets && hasGold && !hasSilver) {
       // ONLY Gold Case
       const goldTolaWeight = goldInGrams / CONSTANTS.TOLA_TO_GRAMS;
-      nisabReached = goldTolaWeight >= CONSTANTS.GOLD_NISAB_TOLA;
+      // ✅ NEW: either gold weight reaches gold nisab OR gold value reaches silver nisab value
+      nisabReached =
+        goldTolaWeight >= CONSTANTS.GOLD_NISAB_TOLA ||
+        goldValue >= silverNisabValue;
     } else if (!hasOtherAssets && !hasGold && hasSilver) {
       // ONLY Silver Case
       const silverTolaWeight = silverInGrams / CONSTANTS.TOLA_TO_GRAMS;
-      nisabReached = silverTolaWeight >= CONSTANTS.SILVER_NISAB_TOLA;
+      // ✅ NEW: either silver weight reaches silver nisab OR silver value reaches gold nisab value
+      nisabReached =
+        silverTolaWeight >= CONSTANTS.SILVER_NISAB_TOLA ||
+        silverValue >= silverNisabValue;
     } else {
       // Mixed Wealth or Combined Metals
       const silverNisabOnly = silverNisabValue;
