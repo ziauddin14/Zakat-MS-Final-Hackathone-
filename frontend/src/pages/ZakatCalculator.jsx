@@ -486,7 +486,23 @@ const ZakatCalculator = () => {
       nisabReached = silverTolaWeight >= CONSTANTS.SILVER_NISAB_TOLA;
     } else {
       // Mixed Wealth or Combined Metals
-      nisabReached = netZakatable >= applicableNisabValue;
+      const silverNisabOnly = silverNisabValue;
+
+      const anySingleAssetReached =
+        cash >= silverNisabOnly ||
+        bank >= silverNisabOnly ||
+        goldValue >= silverNisabOnly ||
+        silverValue >= silverNisabOnly ||
+        stock >= silverNisabOnly ||
+        receivables >= silverNisabOnly ||
+        diamondValue >= silverNisabOnly ||
+        animalsForSale >= silverNisabOnly ||
+        rawMaterials >= silverNisabOnly ||
+        providentFund >= silverNisabOnly;
+
+      // Final Nisab Rule:
+      nisabReached =
+        anySingleAssetReached || netZakatable >= applicableNisabValue;
     }
 
     const zakatPayable = nisabReached
