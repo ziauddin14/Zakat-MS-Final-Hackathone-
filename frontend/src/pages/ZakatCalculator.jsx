@@ -495,16 +495,16 @@ const ZakatCalculator = () => {
       const silverNisabOnly = silverNisabValue;
 
       const anySingleAssetReached =
-        cash >= silverNisabOnly ||
-        bank >= silverNisabOnly ||
-        goldValue >= silverNisabOnly ||
-        silverValue >= silverNisabOnly ||
-        stock >= silverNisabOnly ||
-        receivables >= silverNisabOnly ||
-        diamondValue >= silverNisabOnly ||
-        animalsForSale >= silverNisabOnly ||
-        rawMaterials >= silverNisabOnly ||
-        providentFund >= silverNisabOnly;
+        cash - liabilities >= silverNisabOnly ||
+        bank - liabilities >= silverNisabOnly ||
+        goldValue - liabilities >= silverNisabOnly ||
+        silverValue - liabilities >= silverNisabOnly ||
+        stock - liabilities >= silverNisabOnly ||
+        receivables - liabilities >= silverNisabOnly ||
+        diamondValue - liabilities >= silverNisabOnly ||
+        animalsForSale - liabilities >= silverNisabOnly ||
+        rawMaterials - liabilities >= silverNisabOnly ||
+        providentFund - liabilities >= silverNisabOnly;
 
       // Final Nisab Rule:
       nisabReached =
